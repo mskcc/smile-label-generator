@@ -1,0 +1,30 @@
+# spring web server port
+server.port=
+
+# nats server
+nats.consumer_name=
+nats.consumer_password=
+nats.url=
+
+# nats ssl
+nats.tls_channel=
+nats.keystore_path=
+nats.truststore_path=
+nats.key_password=
+nats.store_password=
+
+# messaging configuration
+igo.new_request_topic=
+igo.cmo_label_generator_topic=
+
+# threading
+num.new_request_handler_threads=
+
+# publishing failures filepath
+metadb.publishing_failures_filepath=
+
+# detailed consistency checking logger filepath
+cmo_label_generator.request_logger_filepath=
+
+# cmo request filter (default is false)
+igo.cmo_request_filter=

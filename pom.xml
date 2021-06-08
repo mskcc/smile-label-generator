@@ -1,0 +1,189 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.mskcc.cmo.metadb</groupId>
+  <artifactId>master</artifactId>
+  <packaging>jar</packaging>
+  <name>MSKCC CMO MetaDB Label Generator</name>
+  <version>0.1.0</version>
+  <description>master maven module</description>
+  <url>https://github.com/mskcc/cmo-metadb-label-generator</url>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.3.3.RELEASE</version>
+  </parent>
+
+  <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <properties>
+    <java.version>1.8</java.version>
+    <maven.compiler.version>1.8</maven.compiler.version>
+    <spring.version>5.2.6.RELEASE</spring.version>
+    <spring.boot.version>2.3.3.RELEASE</spring.boot.version>
+    <slf4j.version>1.7.30</slf4j.version>
+    <jackson.version>2.11.2</jackson.version>
+    <!-- metadb messaging -->
+    <cmo_metadb_messaging_java.group>com.github.mskcc</cmo_metadb_messaging_java.group>
+    <cmo_metadb_messaging_java.version>512dbdac54c00b60f7481421840928a1c45c8c93</cmo_metadb_messaging_java.version>
+    <!-- metadb common centralized config properties -->
+    <cmo_metadb_common.groupId>com.github.mskcc</cmo_metadb_common.groupId>
+    <cmo_metadb_common.version>v1.4-alpha</cmo_metadb_common.version>
+    <!-- metadb server -->
+    <cmo_metadb_app.group>com.github.mskcc.cmo-metadb</cmo_metadb_app.group>
+    <cmo_metadb_app.version>8aa66687378e6b25f77cf7c85984e40115c44ecf</cmo_metadb_app.version>
+  </properties>
+
+  <dependencies>
+      <!-- cmo messaging library -->
+    <dependency>
+      <groupId>${cmo_metadb_messaging_java.group}</groupId>
+      <artifactId>cmo-messaging-java</artifactId>
+      <version>${cmo_metadb_messaging_java.version}</version>
+    </dependency>
+    <!-- cmo metadb common -->
+    <dependency>
+      <groupId>${cmo_metadb_common.groupId}</groupId>
+      <artifactId>cmo-metadb-common</artifactId>
+      <version>${cmo_metadb_common.version}</version>
+    </dependency>
+    <!-- cmo metadb app model -->
+    <dependency>
+      <groupId>${cmo_metadb_app.group}</groupId>
+      <artifactId>model</artifactId>
+      <version>${cmo_metadb_app.version}</version>
+    </dependency>
+    <!-- testing -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>${spring.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>3.3.3</version>
+      <scope>test</scope>
+      <type>jar</type>
+    </dependency>
+    <!-- jackson -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <!-- json assert -->
+    <dependency>
+      <groupId>org.skyscreamer</groupId>
+      <artifactId>jsonassert</artifactId>
+      <version>1.5.0</version>
+    </dependency>
+    <!-- string utils -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>19.0</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.11</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>cmo_label_generator</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>*.properties</include>
+        </includes>
+        <excludes>
+          <exclude>*.properties.EXAMPLE</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>*.properties</include>
+        </includes>
+        <excludes>
+          <exclude>*.properties.EXAMPLE</exclude>
+        </excludes>
+      </resource>
+    </resources>
+    <plugins>
+      <!-- maven compiler plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.1</version>
+        <configuration>
+          <source>${maven.compiler.version}</source>
+          <target>${maven.compiler.version}</target>
+          <compilerArgument>-Xlint:deprecation</compilerArgument>
+        </configuration>
+      </plugin>
+      <!-- maven checkstyle plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.1.1</version>
+        <dependencies>
+          <dependency>
+            <groupId>${cmo_metadb_common.groupId}</groupId>
+            <artifactId>cmo-metadb-common</artifactId>
+            <version>${cmo_metadb_common.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <configLocation>checkstyle.xml</configLocation>
+          <encoding>UTF-8</encoding>
+          <consoleOutput>true</consoleOutput>
+          <failsOnError>true</failsOnError>
+          <linkXRef>false</linkXRef>
+          <useFile>checkstyle_report.txt</useFile>
+        </configuration>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- maven app -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>org.mskcc.cmo.metadb.CmoLabelGeneratorApp</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
