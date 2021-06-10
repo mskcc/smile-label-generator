@@ -5,6 +5,8 @@ server.port=
 nats.consumer_name=
 nats.consumer_password=
 nats.url=
+nats.filter_subject=
+nats.request_wait_time_in_seconds=
 
 # nats ssl
 nats.tls_channel=
@@ -16,6 +18,7 @@ nats.store_password=
 # messaging configuration
 igo.new_request_topic=
 igo.cmo_label_generator_topic=
+request_reply.patient_samples_topic=
 
 # threading
 num.new_request_handler_threads=
@@ -25,6 +28,3 @@ metadb.publishing_failures_filepath=
 
 # detailed consistency checking logger filepath
 cmo_label_generator.request_logger_filepath=
-
-# cmo request filter (default is false)
-igo.cmo_request_filter=
