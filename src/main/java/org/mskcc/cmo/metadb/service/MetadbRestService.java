@@ -7,6 +7,8 @@ import org.mskcc.cmo.metadb.model.SampleMetadata;
  *
  * @author ochoaa
  */
-public interface CmoLabelGeneratorService {
-    String generateCmoSampleLabel(SampleMetadata sampleMetadata);
+public interface MetadbRestService {
+
+    List<SampleMetadata> getSampleMetadataListByCmoPatientId(String cmoPatientId) throws Exception;
+
 }

@@ -1,11 +1,14 @@
 package org.mskcc.cmo.metadb.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nats.client.Message;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -18,7 +21,6 @@ import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
 import org.mskcc.cmo.messaging.MessageConsumer;
 import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.model.web.PublishedMetaDbRequest;
 import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
 import org.mskcc.cmo.metadb.service.MessageHandlingService;
 import org.mskcc.cmo.metadb.service.util.RequestStatusLogger;
@@ -55,8 +57,8 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
     private static boolean initialized = false;
     private static volatile boolean shutdownInitiated;
     private static final ExecutorService exec = Executors.newCachedThreadPool();
-    private static final BlockingQueue<PublishedMetaDbRequest> cmoLabelGeneratorQueue =
-        new LinkedBlockingQueue<PublishedMetaDbRequest>();
+    private static final BlockingQueue<String> cmoLabelGeneratorQueue =
+        new LinkedBlockingQueue<String>();
     private static CountDownLatch cmoLableGeneratorHandlerShutdownLatch;
     private static Gateway messagingGateway;
 
@@ -76,34 +78,37 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
             phaser.arrive();
             while (true) {
                 try {
-                    PublishedMetaDbRequest request = cmoLabelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
-                    if (request != null) {
+                    String requestJson = cmoLabelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
+                    if (requestJson != null) {
                         // skip request if filtering by only cmo requests and cmoRequest status is false
-                        if (igoCmoRequestFilter && !request.isCmoRequest()) {
-                            requestStatusLogger.logRequestStatus(request.getRequestJson(),
+                        if (igoCmoRequestFilter && !isCmoRequest(requestJson)) {
+                            requestStatusLogger.logRequestStatus(requestJson,
                                     RequestStatusLogger.StatusType.CMO_REQUEST_FILTER_SKIPPED_REQUEST);
                             continue;
                         }
                         // skip request if there are no samples to generate cmo labels for
-                        if (request.getSamples().isEmpty()) {
-                            requestStatusLogger.logRequestStatus(request.getRequestJson(),
+                        List<SampleMetadata> samples = getSamplesFromRequestJson(requestJson);
+                        if (samples.isEmpty()) {
+                            requestStatusLogger.logRequestStatus(requestJson,
                                     RequestStatusLogger.StatusType.REQUEST_WITH_MISSING_SAMPLES);
                             continue;
                         }
                         // generate cmo labels for each sample metadata
                         List<SampleMetadata> updatedSamples = new ArrayList<>();
-                        for (SampleMetadata sample : request.getSamples()) {
-                            // generate cmo label
+                        for (SampleMetadata sample : samples) {
+                            // generate cmo label and update map
                             String sampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample);
                             sample.setCmoSampleName(sampleCmoLabel);
                             updatedSamples.add(sample);
                         }
                         // save the updated samples to the request and publish to the igo new request topic
-                        request.setSamples(updatedSamples);
+                        Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
+                        requestJsonMap.put("samples", updatedSamples);
+                        requestJson = mapper.writeValueAsString(requestJsonMap);
                         // publish to igo new request topic
-                        messagingGateway.publish(request.getRequestId(),
+                        messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
                                     IGO_NEW_REQUEST_TOPIC,
-                                    mapper.writeValueAsString(request));
+                                    requestJson);
                     }
                     if (interrupted && cmoLabelGeneratorQueue.isEmpty()) {
                         break;
@@ -131,14 +136,14 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
     }
 
     @Override
-    public void cmoLabelGeneratorHandler(PublishedMetaDbRequest request) throws Exception {
+    public void cmoLabelGeneratorHandler(String requestJson) throws Exception {
         if (!initialized) {
             throw new IllegalStateException("Message Handling Service has not been initialized");
         }
         if (!shutdownInitiated) {
-            cmoLabelGeneratorQueue.put(request);
+            cmoLabelGeneratorQueue.put(requestJson);
         } else {
-            LOG.error("Shutdown initiated, not accepting request: " + request);
+            LOG.error("Shutdown initiated, not accepting request: " + requestJson);
             throw new IllegalStateException("Shutdown initiated, not handling any more requests");
         }
     }
@@ -173,10 +178,7 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                     String requestJson = mapper.readValue(
                             new String(msg.getData(), StandardCharsets.UTF_8),
                             String.class);
-                    PublishedMetaDbRequest request = mapper.readValue(requestJson,
-                            PublishedMetaDbRequest.class);
-                    request.setRequestJson(requestJson);
-                    messageHandlingService.cmoLabelGeneratorHandler(request);
+                    messageHandlingService.cmoLabelGeneratorHandler(requestJson);
                 } catch (Exception e) {
                     LOG.error("Exception during processing of request on topic: "
                             + CMO_LABEL_GENERATOR_TOPIC, e);
@@ -189,5 +191,23 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                 }
             }
         });
+    }
+
+    private String getRequestIdFromRequestJson(String requestJson) throws JsonProcessingException {
+        Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
+        return requestJsonMap.get("requestId").toString();
+    }
+
+    private Boolean isCmoRequest(String requestJson) throws JsonProcessingException {
+        Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
+        return Boolean.valueOf(requestJsonMap.get("cmoRequest").toString());
+    }
+
+    private List<SampleMetadata> getSamplesFromRequestJson(String requestJson)
+            throws JsonProcessingException {
+        Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
+        SampleMetadata[] sampleList = mapper.convertValue(requestJsonMap.get("samples"),
+                SampleMetadata[].class);
+        return Arrays.asList(sampleList);
     }
 }

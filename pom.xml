@@ -37,13 +37,13 @@
     <jackson.version>2.11.2</jackson.version>
     <!-- metadb messaging -->
     <cmo_metadb_messaging_java.group>com.github.mskcc</cmo_metadb_messaging_java.group>
-    <cmo_metadb_messaging_java.version>512dbdac54c00b60f7481421840928a1c45c8c93</cmo_metadb_messaging_java.version>
+    <cmo_metadb_messaging_java.version>c1a017167aee4cf30bf5b68fafaf0d55a374162a</cmo_metadb_messaging_java.version>
     <!-- metadb common centralized config properties -->
     <cmo_metadb_common.groupId>com.github.mskcc</cmo_metadb_common.groupId>
-    <cmo_metadb_common.version>v1.4-alpha</cmo_metadb_common.version>
-    <!-- metadb server -->
-    <cmo_metadb_app.group>com.github.mskcc.cmo-metadb</cmo_metadb_app.group>
-    <cmo_metadb_app.version>8aa66687378e6b25f77cf7c85984e40115c44ecf</cmo_metadb_app.version>
+    <cmo_metadb_common.version>4908b1cb7e2efb5792f131008996f8246c6db81f</cmo_metadb_common.version>
+    <!-- metadb server model module -->
+    <cmo_metadb_server.group>com.github.mskcc.cmo-metadb</cmo_metadb_server.group>
+    <cmo_metadb_server.version>efc2e1c4cd28f9dedf09f908c400cb37f4d9bf4b</cmo_metadb_server.version>
   </properties>
 
   <dependencies>
@@ -59,11 +59,16 @@
       <artifactId>cmo-metadb-common</artifactId>
       <version>${cmo_metadb_common.version}</version>
     </dependency>
-    <!-- cmo metadb app model -->
+    <!-- cmo metadb server model -->
     <dependency>
-      <groupId>${cmo_metadb_app.group}</groupId>
+      <groupId>${cmo_metadb_server.group}</groupId>
       <artifactId>model</artifactId>
-      <version>${cmo_metadb_app.version}</version>
+      <version>${cmo_metadb_server.version}</version>
+    </dependency>
+    <!-- spring -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
     </dependency>
     <!-- testing -->
     <dependency>

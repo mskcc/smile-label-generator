@@ -5,6 +5,7 @@ server.port=
 nats.consumer_name=
 nats.consumer_password=
 nats.url=
+nats.filter_subject=
 
 # nats ssl
 nats.tls_channel=
@@ -12,6 +13,10 @@ nats.keystore_path=
 nats.truststore_path=
 nats.key_password=
 nats.store_password=
+
+# metadb server
+metadb_server.base_url=
+metadb_server.pt_samples_endpoint=
 
 # messaging configuration
 igo.new_request_topic=
