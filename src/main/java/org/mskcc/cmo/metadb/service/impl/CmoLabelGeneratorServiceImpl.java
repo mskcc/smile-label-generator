@@ -88,7 +88,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     metadbRestService.getSampleMetadataListByCmoPatientId(sampleMetadata.getCmoPatientId());
         } catch (Exception ex) {
             LOG.error("Error during attempt to fetch existing samples by CMO Patient ID", ex);
-            return null;
         }
         String patientId = sampleMetadata.getCmoPatientId();
 

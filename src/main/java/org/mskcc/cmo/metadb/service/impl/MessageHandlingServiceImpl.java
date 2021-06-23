@@ -80,12 +80,6 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                 try {
                     String requestJson = cmoLabelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (requestJson != null) {
-                        // skip request if filtering by only cmo requests and cmoRequest status is false
-                        if (igoCmoRequestFilter && !isCmoRequest(requestJson)) {
-                            requestStatusLogger.logRequestStatus(requestJson,
-                                    RequestStatusLogger.StatusType.CMO_REQUEST_FILTER_SKIPPED_REQUEST);
-                            continue;
-                        }
                         // skip request if there are no samples to generate cmo labels for
                         List<SampleMetadata> samples = getSamplesFromRequestJson(requestJson);
                         if (samples.isEmpty()) {
@@ -105,10 +99,15 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
                         requestJsonMap.put("samples", updatedSamples);
                         requestJson = mapper.writeValueAsString(requestJsonMap);
-                        // publish to igo new request topic
-                        messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
-                                    IGO_NEW_REQUEST_TOPIC,
-                                    requestJson);
+                        try {
+                         // publish to igo new request topic
+                            messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
+                                        IGO_NEW_REQUEST_TOPIC,
+                                        requestJson);
+                        } catch (Exception e) {
+                            //log publish failure exceptions
+                        }
+                        
                     }
                     if (interrupted && cmoLabelGeneratorQueue.isEmpty()) {
                         break;
