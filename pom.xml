@@ -37,10 +37,10 @@
     <jackson.version>2.11.2</jackson.version>
     <!-- metadb messaging -->
     <cmo_metadb_messaging_java.group>com.github.mskcc</cmo_metadb_messaging_java.group>
-    <cmo_metadb_messaging_java.version>c1a017167aee4cf30bf5b68fafaf0d55a374162a</cmo_metadb_messaging_java.version>
+    <cmo_metadb_messaging_java.version>fba865539deb5c2f25e1cf2b845f4460c3917139</cmo_metadb_messaging_java.version>
     <!-- metadb common centralized config properties -->
-    <cmo_metadb_common.groupId>com.github.mskcc</cmo_metadb_common.groupId>
-    <cmo_metadb_common.version>4908b1cb7e2efb5792f131008996f8246c6db81f</cmo_metadb_common.version>
+    <cmo_metadb_common.group>com.github.mskcc</cmo_metadb_common.group>
+    <cmo_metadb_common.version>v1.6</cmo_metadb_common.version>
     <!-- metadb server model module -->
     <cmo_metadb_server.group>com.github.mskcc.cmo-metadb</cmo_metadb_server.group>
     <cmo_metadb_server.version>efc2e1c4cd28f9dedf09f908c400cb37f4d9bf4b</cmo_metadb_server.version>
@@ -55,7 +55,7 @@
     </dependency>
     <!-- cmo metadb common -->
     <dependency>
-      <groupId>${cmo_metadb_common.groupId}</groupId>
+      <groupId>${cmo_metadb_common.group}</groupId>
       <artifactId>cmo-metadb-common</artifactId>
       <version>${cmo_metadb_common.version}</version>
     </dependency>
@@ -158,7 +158,7 @@
         <version>3.1.1</version>
         <dependencies>
           <dependency>
-            <groupId>${cmo_metadb_common.groupId}</groupId>
+            <groupId>${cmo_metadb_common.group}</groupId>
             <artifactId>cmo-metadb-common</artifactId>
             <version>${cmo_metadb_common.version}</version>
           </dependency>

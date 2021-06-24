@@ -210,16 +210,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // otherwise extract the max counter from the current set of samples
         // do not rely on the size of the list having the exact same counter
         // to prevent accidentally giving samples the same counter
-        System.out.println("\n\nGetting next sample increment..");
         Integer maxIncrement = 0;
         for (SampleMetadata sample : samples) {
-
-            System.out.println("Checking if CMO CELL LINE match on sample: " + sample.getCmoSampleName());
             if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
                 System.out.println("CMO CELLLINE MATCH, CONTINUING");
                 continue;
             }
-            System.out.println("CHECKING CMO SAMPLE ID REGEX ON : " + sample.getCmoSampleName());
             Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
             // increment assigned to the current sample is in group 3 of matcher
             if (matcher.find()) {

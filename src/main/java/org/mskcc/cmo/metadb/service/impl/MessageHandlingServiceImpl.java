@@ -100,14 +100,14 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                         requestJsonMap.put("samples", updatedSamples);
                         requestJson = mapper.writeValueAsString(requestJsonMap);
                         try {
-                         // publish to igo new request topic
+                            // publish to igo new request topic
                             messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
                                         IGO_NEW_REQUEST_TOPIC,
                                         requestJson);
                         } catch (Exception e) {
                             //log publish failure exceptions
                         }
-                        
+
                     }
                     if (interrupted && cmoLabelGeneratorQueue.isEmpty()) {
                         break;
