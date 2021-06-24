@@ -17,7 +17,7 @@ import org.mskcc.cmo.common.enums.SampleType;
 import org.mskcc.cmo.common.enums.SpecimenType;
 import org.mskcc.cmo.metadb.model.SampleMetadata;
 import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
-import org.mskcc.cmo.metadb.service.MetadbRestService;
+import org.mskcc.cmo.metadb.service.MetadbService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,12 +37,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     public static final String CMO_LABEL_SEPARATOR = "-";
 
     @Autowired
-    private MetadbRestService metadbRestService;
+    private MetadbService metadbService;
 
     // globals for mapping sample type abbreviations
-    private static Map<SpecimenType, String> SPECIMEN_TYPE_ABBREV_MAP = new HashMap<>();
-    private static Map<SampleOrigin, String> SAMPLE_ORIGIN_ABBREV_MAP = new HashMap<>();
-    private static Map<CmoSampleClass, String> SAMPLE_CLASS_ABBREV_MAP = new HashMap<>();
+    private static final Map<SpecimenType, String> SPECIMEN_TYPE_ABBREV_MAP = initSpecimenTypeAbbrevMap();
+    private static final Map<SampleOrigin, String> SAMPLE_ORIGIN_ABBREV_MAP = initSampleOriginAbbrevMap();
+    private static final Map<CmoSampleClass, String> SAMPLE_CLASS_ABBREV_MAP = initCmoSampleClassAbbrevMap();
     private static final List<SampleOrigin> KNOWN_CFDNA_SAMPLE_ORIGINS =
             Arrays.asList(SampleOrigin.URINE,
                     SampleOrigin.CEREBROSPINAL_FLUID,
@@ -50,29 +50,47 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     SampleOrigin.WHOLE_BLOOD);
     private static final String SAMPLE_ORIGIN_ABBREV_DEFAULT = "T";
 
-    @Autowired
-    private void initSampleTypeAbbreviationMapping() {
-        // set up mapping by specimen type
-        SPECIMEN_TYPE_ABBREV_MAP.put(SpecimenType.PDX, "X");
-        SPECIMEN_TYPE_ABBREV_MAP.put(SpecimenType.XENOGRAFT, "X");
-        SPECIMEN_TYPE_ABBREV_MAP.put(SpecimenType.XENOGRAFTDERIVEDCELLLINE, "X");
-        SPECIMEN_TYPE_ABBREV_MAP.put(SpecimenType.ORGANOID, "G");
+    /**
+     * Init specimen type abbreviation mappings.
+     * @return
+     */
+    private static Map<SpecimenType, String> initSpecimenTypeAbbrevMap() {
+        Map<SpecimenType, String> map = new HashMap<>();
+        map.put(SpecimenType.PDX, "X");
+        map.put(SpecimenType.XENOGRAFT, "X");
+        map.put(SpecimenType.XENOGRAFTDERIVEDCELLLINE, "X");
+        map.put(SpecimenType.ORGANOID, "G");
+        return map;
+    }
 
-        // set up mapping by sample origin
-        SAMPLE_ORIGIN_ABBREV_MAP.put(SampleOrigin.URINE, "U");
-        SAMPLE_ORIGIN_ABBREV_MAP.put(SampleOrigin.CEREBROSPINAL_FLUID, "S");
-        SAMPLE_ORIGIN_ABBREV_MAP.put(SampleOrigin.PLASMA, "L");
-        SAMPLE_ORIGIN_ABBREV_MAP.put(SampleOrigin.WHOLE_BLOOD, "L");
+    /**
+     * Init sample origin abbreviation mappings.
+     * @return
+     */
+    private static Map<SampleOrigin, String> initSampleOriginAbbrevMap() {
+        Map<SampleOrigin, String> map = new HashMap<>();
+        map.put(SampleOrigin.URINE, "U");
+        map.put(SampleOrigin.CEREBROSPINAL_FLUID, "S");
+        map.put(SampleOrigin.PLASMA, "L");
+        map.put(SampleOrigin.WHOLE_BLOOD, "L");
+        return map;
+    }
 
-        // set up mapping by sample class
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.UNKNOWN_TUMOR, "T");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.LOCAL_RECURRENCE, "R");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.PRIMARY, "P");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.RECURRENCE, "R");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.METASTASIS, "M");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.NORMAL, "N");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.ADJACENT_NORMAL, "N");
-        SAMPLE_CLASS_ABBREV_MAP.put(CmoSampleClass.ADJACENT_TISSUE, "T");
+    /**
+     * Init CMO sample class abbreviation mappings.
+     * @return
+     */
+    private static Map<CmoSampleClass, String> initCmoSampleClassAbbrevMap() {
+        Map<CmoSampleClass, String> map = new HashMap<>();
+        map.put(CmoSampleClass.UNKNOWN_TUMOR, "T");
+        map.put(CmoSampleClass.LOCAL_RECURRENCE, "R");
+        map.put(CmoSampleClass.PRIMARY, "P");
+        map.put(CmoSampleClass.RECURRENCE, "R");
+        map.put(CmoSampleClass.METASTASIS, "M");
+        map.put(CmoSampleClass.NORMAL, "N");
+        map.put(CmoSampleClass.ADJACENT_NORMAL, "N");
+        map.put(CmoSampleClass.ADJACENT_TISSUE, "T");
+        return map;
     }
 
     @Override
@@ -85,7 +103,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         List<SampleMetadata> existingSamples = new ArrayList<>();
         try {
             existingSamples =
-                    metadbRestService.getSampleMetadataListByCmoPatientId(sampleMetadata.getCmoPatientId());
+                    metadbService.getSampleMetadataListByCmoPatientId(sampleMetadata.getCmoPatientId());
         } catch (Exception ex) {
             LOG.error("Error during attempt to fetch existing samples by CMO Patient ID", ex);
         }

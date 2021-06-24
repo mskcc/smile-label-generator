@@ -7,7 +7,7 @@ import org.mskcc.cmo.metadb.model.SampleMetadata;
  *
  * @author ochoaa
  */
-public interface MetadbRestService {
+public interface MetadbService {
 
     List<SampleMetadata> getSampleMetadataListByCmoPatientId(String cmoPatientId) throws Exception;
 

@@ -8,10 +8,10 @@ import org.mockito.Mockito;
 import org.mskcc.cmo.metadb.config.TestConfiguration;
 import org.mskcc.cmo.metadb.model.SampleMetadata;
 import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
-import org.mskcc.cmo.metadb.service.MetadbRestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mskcc.cmo.metadb.service.MetadbService;
 
 /**
  * Ported tests from
@@ -36,7 +36,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
     private CmoLabelGeneratorService cmoLabelGeneratorService;
 
     @Autowired
-    private MetadbRestService metadbRestService;
+    private MetadbService metadbRestService;
 
     /**
      * Test CMO label generation for a patient with no samples.

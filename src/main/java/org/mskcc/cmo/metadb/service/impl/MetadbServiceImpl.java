@@ -14,7 +14,7 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.service.MetadbRestService;
+import org.mskcc.cmo.metadb.service.MetadbService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -32,8 +32,8 @@ import org.springframework.web.client.RestTemplate;
  * @author ochoaa
  */
 @Service
-public class MetadbRestServiceImpl implements MetadbRestService {
-    private static final Log LOG = LogFactory.getLog(MetadbRestServiceImpl.class);
+public class MetadbServiceImpl implements MetadbService {
+    private static final Log LOG = LogFactory.getLog(MetadbServiceImpl.class);
 
     @Value("${metadb_server.base_url}")
     private String metadbBaseUrl;
