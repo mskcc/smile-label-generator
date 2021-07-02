@@ -3,10 +3,12 @@ package org.mskcc.cmo.metadb.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nats.client.Message;
+import io.nats.client.NUID;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -79,7 +81,7 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
             while (true) {
                 try {
                     String requestJson = cmoLabelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
-                    if (requestJson != null) {
+                    if (requestJson != null && requestJson.length() > 10) {
                         // skip request if there are no samples to generate cmo labels for
                         List<SampleMetadata> samples = getSamplesFromRequestJson(requestJson);
                         if (samples.isEmpty()) {
@@ -90,8 +92,30 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                         // generate cmo labels for each sample metadata
                         List<SampleMetadata> updatedSamples = new ArrayList<>();
                         for (SampleMetadata sample : samples) {
+                            String replyTo = NUID.nextGlobal();
+                            Map<String, String> requestMessage = new HashMap<>();
+                            requestMessage.put("reply-to-subject", replyTo);
+                            requestMessage.put("data", sample.getCmoPatientId());
+                            
+                            String requestMessageString = mapper.writeValueAsString(requestMessage);
+//                            Message reply = messagingGateway.request("METADB.patient-samples-request", replyTo, requestMessageString);
+                            // TODO: consolidate these actions into a request method in the messaging gateway
+                            // such that the subscriber is deleted once a single message has been processed on the topic
+                            messagingGateway.publish("METADBREPLY.patient-samples-request", requestMessageString);
+                            messagingGateway.subscribe("METADBREPLY.patient-samples-reply" + replyTo, Object.class, new MessageConsumer() {
+                                @Override
+                                public void onMessage(Message msg, Object o) {
+                                    System.out.println("Data received on reply to subject: ");
+                                    System.out.println(new String(msg.getData(), StandardCharsets.UTF_8));
+                                    System.out.println("Data stored in plain object: " + o.toString());
+                                }
+                            });
+
                             // generate cmo label and update map
-                            String sampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample);
+                            // TODO resolve any issues that arise with errors in generating cmo label
+                            //String sampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample);
+                            // temp placeholder because i just wanted to get the pub-sub "request" to work
+                            String sampleCmoLabel = sample.getCmoSampleName(); 
                             sample.setCmoSampleName(sampleCmoLabel);
                             updatedSamples.add(sample);
                         }
@@ -177,7 +201,9 @@ public class MessageHandlingServiceImpl implements MessageHandlingService {
                     String requestJson = mapper.readValue(
                             new String(msg.getData(), StandardCharsets.UTF_8),
                             String.class);
-                    messageHandlingService.cmoLabelGeneratorHandler(requestJson);
+                    if (requestJson.length() > 5) {
+                        messageHandlingService.cmoLabelGeneratorHandler(requestJson);
+                    }
                 } catch (Exception e) {
                     LOG.error("Exception during processing of request on topic: "
                             + CMO_LABEL_GENERATOR_TOPIC, e);
