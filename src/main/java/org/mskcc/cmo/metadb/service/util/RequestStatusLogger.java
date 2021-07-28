@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mskcc.cmo.common.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,12 +36,15 @@ public class RequestStatusLogger {
      * - REQUEST_PARSING_ERROR: json parsing exception thrown
      * - CMO_REQUEST_FILTER_SKIPPED_REQUEST: applies if metadb server is running
      *        with the cmoRequestFilter enabled and a non-cmo request is encountered
+     * - REQUEST_WITH_FAILED_CMO_LABEL_GENERATION: request contains samples for which a
+     *        CMO label was not successfully generated
      */
     public enum StatusType {
         REQUEST_WITH_MISSING_SAMPLES,
         CMO_REQUEST_MISSING_REQ_FIELDS,
         REQUEST_PARSING_ERROR,
-        CMO_REQUEST_FILTER_SKIPPED_REQUEST
+        CMO_REQUEST_FILTER_SKIPPED_REQUEST,
+        REQUEST_WITH_FAILED_CMO_LABEL_GENERATION
     }
 
     /**
