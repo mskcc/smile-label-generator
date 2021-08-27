@@ -17,6 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
@@ -233,8 +235,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         return requestJsonMap.get("requestId").toString();
     }
 
-    private List<SampleMetadata> getSamplesFromRequestJson(String requestJson)
-            throws JsonProcessingException {
+    private List<SampleMetadata> getSamplesFromRequestJson(String requestJson) throws Exception {
         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
         SampleMetadata[] sampleList = mapper.convertValue(requestJsonMap.get("samples"),
                 SampleMetadata[].class);
