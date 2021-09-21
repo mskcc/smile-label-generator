@@ -146,7 +146,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         Map<String, List<SampleMetadata>> patientSamplesMap = getPatientSamplesMap(samples);
 
                         // udpated samples list will store samples which had a label generated successfully
-                        List<SampleMetadata> updatedSamples = new ArrayList<>();
+                        List<Object> updatedSamples = new ArrayList<>();
                         for (SampleMetadata sample : samples) {
                             // get existing patient samples for cmo patient id
                             List<SampleMetadata> existingSamples =
@@ -177,7 +177,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         // update contents of 'samples' in request json map to publish
                         // and add updated request json to publisher queue
                         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
-                        requestJsonMap.put("samples", updatedSamples);
+                        requestJsonMap.put("samples",
+                                updatedSamples);
                         igoNewRequestPublisherQueue.add(mapper.writeValueAsString(requestJsonMap));
                     }
                     if (interrupted && cmoLabelGeneratorQueue.isEmpty()) {
@@ -222,7 +223,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 SampleMetadata[] ptSamples = mapper.readValue(
                         new String(reply.getData(), StandardCharsets.UTF_8),
                         SampleMetadata[].class);
-                patientSamplesMap.put(sample.getCmoPatientId(), Arrays.asList(ptSamples));
+                patientSamplesMap.put(sample.getCmoPatientId(),
+                        new ArrayList<>(Arrays.asList(ptSamples)));
             }
         }
         return patientSamplesMap;
@@ -235,10 +237,14 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
 
     private List<SampleMetadata> getSamplesFromRequestJson(String requestJson)
             throws JsonProcessingException {
+        String requestId = getRequestIdFromRequestJson(requestJson);
         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
-        SampleMetadata[] sampleList = mapper.convertValue(requestJsonMap.get("samples"),
-                SampleMetadata[].class);
-        return Arrays.asList(sampleList);
+        List<SampleMetadata> sampleList = Arrays.asList(mapper.convertValue(requestJsonMap.get("samples"),
+                SampleMetadata[].class));
+        sampleList.forEach((s) -> {
+            s.setRequestId(requestId);
+        });
+        return sampleList;
     }
 
     @Override
