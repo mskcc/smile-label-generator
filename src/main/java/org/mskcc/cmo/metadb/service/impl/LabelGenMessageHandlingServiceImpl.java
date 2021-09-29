@@ -3,7 +3,6 @@ package org.mskcc.cmo.metadb.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nats.client.Message;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,8 +92,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         try {
                             // publish to igo new request topic
                             LOG.info("Publishing request to: " + IGO_NEW_REQUEST_TOPIC);
-                            messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
-                                        IGO_NEW_REQUEST_TOPIC,
+                            messagingGateway.publish(IGO_NEW_REQUEST_TOPIC,
                                         requestJson);
                         } catch (Exception e) {
                             LOG.error("Error occurred during attempt to publish on topic: "
