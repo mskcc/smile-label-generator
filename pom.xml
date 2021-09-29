@@ -40,10 +40,10 @@
     <cmo_metadb_messaging_java.version>c12bb160613ecf7bab6b3af8ee05044b17b69e3d</cmo_metadb_messaging_java.version>
     <!-- metadb common centralized config properties -->
     <cmo_metadb_common.group>com.github.mskcc</cmo_metadb_common.group>
-    <cmo_metadb_common.version>v1.6</cmo_metadb_common.version>
+    <cmo_metadb_common.version>7a2991cd9ecdb52400c2350286dbf9b2d360c3b1</cmo_metadb_common.version>
     <!-- metadb server model module -->
     <cmo_metadb_server.group>com.github.mskcc.cmo-metadb</cmo_metadb_server.group>
-    <cmo_metadb_server.version>v1.0</cmo_metadb_server.version>
+    <cmo_metadb_server.version>request-data-versioning-SNAPSHOT</cmo_metadb_server.version>
   </properties>
 
   <dependencies>
