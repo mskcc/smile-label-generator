@@ -93,7 +93,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             // publish to igo new request topic
                             LOG.info("Publishing request to: " + IGO_NEW_REQUEST_TOPIC);
                             String natsMsgHdr = getRequestIdFromRequestJson(requestJson)
-                                    + " _" + IGO_NEW_REQUEST_TOPIC;
+                                    + "_LABELGENERATOR";
                             messagingGateway.publish(natsMsgHdr,
                                         IGO_NEW_REQUEST_TOPIC,
                                         requestJson);
