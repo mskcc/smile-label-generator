@@ -92,7 +92,10 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         try {
                             // publish to igo new request topic
                             LOG.info("Publishing request to: " + IGO_NEW_REQUEST_TOPIC);
-                            messagingGateway.publish(IGO_NEW_REQUEST_TOPIC,
+                            String natsMsgHdr = getRequestIdFromRequestJson(requestJson)
+                                    + " _" + IGO_NEW_REQUEST_TOPIC;
+                            messagingGateway.publish(natsMsgHdr,
+                                        IGO_NEW_REQUEST_TOPIC,
                                         requestJson);
                         } catch (Exception e) {
                             LOG.error("Error occurred during attempt to publish on topic: "
