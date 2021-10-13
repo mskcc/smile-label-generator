@@ -143,7 +143,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     return "d";
             }
         } catch (Exception e) {
-            LOG.warn("Could not resolve sample type acid from 'sampleType' - using default 'd'");
+            LOG.debug("Could not resolve sample type acid from 'sampleType' - using default 'd'");
         }
         // if nucleic acid abbreviation is still unknown then attempt to resolve from
         // sample metadata --> cmo sample id fields --> naToExtract
@@ -163,7 +163,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not resolve nucleic acid from 'naToExtract' - using default 'd'");
+            LOG.debug("Could not resolve nucleic acid from 'naToExtract' - using default 'd'");
             return "d";
         }
 
@@ -196,7 +196,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not resolve specimen type acid from 'specimenType': "
+            LOG.debug("Could not resolve specimen type acid from 'specimenType': "
                     + sampleMetadata.toString());
         }
         // if abbreviation is still not resolved then try to resolve from sample class
