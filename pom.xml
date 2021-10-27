@@ -43,7 +43,7 @@
     <cmo_metadb_common.version>1.1.7.RELEASE</cmo_metadb_common.version>
     <!-- metadb server model module -->
     <cmo_metadb_server.group>com.github.mskcc.cmo-metadb</cmo_metadb_server.group>
-    <cmo_metadb_server.version>1.1.2.RELEASE</cmo_metadb_server.version>
+    <cmo_metadb_server.version>1.1.2b.RELEASE</cmo_metadb_server.version>
   </properties>
 
   <dependencies>
