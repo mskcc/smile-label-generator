@@ -198,7 +198,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         Boolean foundMatching = Boolean.FALSE;
         // if sample already exists in the existing samples list then simply replace at the matching index
         for (SampleMetadata existing : existingSamples) {
-            if (existing.getIgoId().equalsIgnoreCase(sample.getIgoId())) {
+            if (existing.getPrimaryId().equalsIgnoreCase(sample.getPrimaryId())) {
                 existingSamples.set(existingSamples.indexOf(existing), sample);
                 foundMatching = Boolean.TRUE;
                 break;
