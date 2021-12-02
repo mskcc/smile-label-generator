@@ -266,7 +266,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
             String specimenType, String cmoSampleName) {
         SampleMetadata sample = new SampleMetadata();
         sample.setRequestId(requestId);
-        sample.setIgoId(igoId);
+        sample.setPrimaryId(igoId);
         sample.setCmoPatientId(cmoPatientId);
         sample.setSpecimenType(specimenType);
         sample.setCmoSampleName(cmoSampleName);
@@ -277,7 +277,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
             SpecimenType specimenType, NucleicAcid naToExtract) {
         SampleMetadata sample = new SampleMetadata();
         sample.setRequestId(requestId);
-        sample.setIgoId(igoId);
+        sample.setPrimaryId(igoId);
         sample.setCmoPatientId(cmoPatientId);
         sample.setSpecimenType(specimenType.getValue());
 
