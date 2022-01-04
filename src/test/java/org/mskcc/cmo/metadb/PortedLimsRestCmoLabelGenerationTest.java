@@ -273,7 +273,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         SampleMetadata sample = new SampleMetadata();
         sample.setPrimaryId(igoId);
         sample.setCmoPatientId(cmoPatientId);
-        sample.setSpecimenType(specimenType);
+        sample.setSampleClass(specimenType);
         sample.setCmoSampleName(cmoSampleName);
         return sample;
     }
