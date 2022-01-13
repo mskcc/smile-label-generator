@@ -28,11 +28,16 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorServiceImpl.class);
     // example: C-1235-X001-d
     public static final Pattern CMO_SAMPLE_ID_REGEX =
-            Pattern.compile("^C-([a-zA-Z0-9]+)-([NTRMLUPSGX])([0-9]{3})-([dr])$");
+            Pattern.compile("^C-([a-zA-Z0-9]+)-([NTRMLUPSGX])([0-9]{3})-([d|r])(.*$)");
     // example: JH123-12345T
     public static final Pattern CMO_CELLLINE_ID_REGEX =
             Pattern.compile("^([A-Za-z0-9]+)-([A-Za-z0-9]+)$");
     public static final String CMO_LABEL_SEPARATOR = "-";
+    public static final Integer CMO_SAMPLE_COUNTER_GROUP = 3;
+    public static final Integer CMO_SAMPLE_COUNTER_STRING_PADDING = 3;
+    public static final Integer CMO_SAMPLE_NUCACID_ABBREV_GROUP = 4;
+    public static final Integer CMO_SAMPLE_NUCACID_COUNTER_GROUP = 5;
+    public static final Integer CMO_SAMPLE_NUCACID_COUNTER_PADDING = 2;
 
     // globals for mapping sample type abbreviations
     private static final Map<SpecimenType, String> SPECIMEN_TYPE_ABBREV_MAP = initSpecimenTypeAbbrevMap();
@@ -105,8 +110,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
 
         // get next incremement value for cmo sample counter
-        Integer nextIncrement = getNextSampleIncrement(existingSamples);
-        String paddedIncrementString = getPaddedNextSampleIncrement(nextIncrement);
+        Integer nextSampleCounter = getNextSampleIncrement(existingSamples);
+        String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
+                CMO_SAMPLE_COUNTER_STRING_PADDING);
 
         // resolve nucleic acid abbreviation
         String nucleicAcidAbbreviation = resolveNucleicAcidAbbreviation(sampleManifest);
@@ -114,9 +120,14 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             throw new RuntimeException("Could not resolve nucleic acid abbreviation from sample "
                     + "type or naToExtract: " + sampleManifest.toString());
         }
+        // get next increment for nucleic acid abbreviation
+        Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
+        String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
+                CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
-        String formattedCmoLabel = String.format("%s-%s%s-%s", patientId,
-                sampleTypeAbbreviation, paddedIncrementString, nucleicAcidAbbreviation);
+        String formattedCmoLabel = String.format("%s-%s%s-%s%s", patientId,
+                sampleTypeAbbreviation, paddedSampleCounter, nucleicAcidAbbreviation,
+                paddedNucAcidCounter);
         return formattedCmoLabel;
     }
 
@@ -207,10 +218,21 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         return SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
     }
 
-    private String getPaddedNextSampleIncrement(Integer increment) {
-        return StringUtils.leftPad(String.valueOf(increment), 3, "0");
+    /**
+     * Returns a padded string with the provided increment and padding size.
+     * @param increment
+     * @param padding
+     * @return String
+     */
+    private String getPaddedIncrementString(Integer increment, Integer padding) {
+        return StringUtils.leftPad(String.valueOf(increment), padding, "0");
     }
 
+    /**
+     * Returns the next sample increment.
+     * @param samples
+     * @return
+     */
     private Integer getNextSampleIncrement(List<SampleMetadata> samples) {
         // return 1 if samples is empty
         if (samples.isEmpty()) {
@@ -228,7 +250,53 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
             // increment assigned to the current sample is in group 3 of matcher
             if (matcher.find()) {
-                Integer currentIncrement = Integer.valueOf(matcher.group(3));
+                Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                if (currentIncrement > maxIncrement) {
+                    maxIncrement = currentIncrement;
+                }
+            }
+        }
+        return maxIncrement + 1;
+    }
+
+    /**
+     * Returns the nucleic acid increment. Counter will be a 2 digit integer value range
+     * from 01-99 (values less < 10 are filled in with zeros '0' to preserve 2-digit format).
+     * From the time of implementation the first sample for a particular Nucleic Acid get 01.
+     * @param nucleicAcidAbbreviation
+     * @param samples
+     * @return Integer
+     */
+    private Integer getNextNucleicAcidIncrement(String nucleicAcidAbbreviation,
+            List<SampleMetadata> samples) {
+        if (samples.isEmpty()) {
+            return 1;
+        }
+        // otherwise extract the max counter from the current set of samples
+        // do not rely on the size of the list having the exact same counter
+        // to prevent accidentally giving samples the same counter
+        Integer maxIncrement = 0;
+        for (SampleMetadata sample : samples) {
+            // skip cell line samples
+            if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
+                continue;
+            }
+            Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+            // increment assigned to the current sample is in group 3 of matcher
+            if (matcher.find()) {
+                // nucleic acid abbreviation determines which counters we consider
+                // when iterating through sample list
+                if (!matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP)
+                        .equalsIgnoreCase(nucleicAcidAbbreviation)) {
+                    continue;
+                }
+                Integer currentIncrement;
+                if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
+                        || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
+                    currentIncrement = 1;
+                } else {
+                    currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+                }
                 if (currentIncrement > maxIncrement) {
                     maxIncrement = currentIncrement;
                 }
