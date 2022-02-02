@@ -11,4 +11,6 @@ import org.mskcc.cmo.metadb.model.igo.IgoSampleManifest;
 public interface CmoLabelGeneratorService {
     String generateCmoSampleLabel(String requestId,
             IgoSampleManifest sampleManifest, List<SampleMetadata> existingPatientSamples);
+    String generateCmoSampleLabel(SampleMetadata sample, List<SampleMetadata> existingPatientSamples);
+    Boolean igoSampleRequiresLabelUpdate(String newCmoLabel, String existingCmoLabel);
 }

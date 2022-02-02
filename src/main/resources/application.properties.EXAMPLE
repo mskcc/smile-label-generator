@@ -18,6 +18,8 @@ nats.store_password=
 # messaging configuration
 igo.new_request_topic=
 igo.cmo_label_generator_topic=
+igo.cmo_sample_label_update_topic=
+metadb.sample_update_topic=
 request_reply.patient_samples_topic=
 
 # threading
