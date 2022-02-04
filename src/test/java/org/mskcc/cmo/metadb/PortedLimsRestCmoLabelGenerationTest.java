@@ -298,6 +298,80 @@ public class PortedLimsRestCmoLabelGenerationTest {
         Assert.assertEquals("C-1235-G002-d02", cmoId2);
     }
 
+    /**
+     * Tests assertion of IGO sample NOT requiring a cmo label update since
+     * all of the relevant metadata fields that are used to generate the label
+     * match the existing IGO sample metadata used for the label.
+     * Note: Even if the metadata does not contain updates that affect the label
+     *  generated, there may still be updates to other metadata fields that are
+     *  not used for generating or regenerating a cmo label.
+     * @throws Exception
+     */
+    @Test
+    public void testIgoSampleWithNoLabelChangingMetadataUpdates() throws Exception {
+        String requestId = "5432_P";
+        String cmoPatientId = "C-1235";
+        List<SampleMetadata> existingSamples = new ArrayList<>();
+
+        // sample 1 for patient w/igo id 4324_1
+        String cmoId1 = "C-1235-G001-d01";
+        SampleMetadata existingSample1 = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Organoid", cmoId1);
+        existingSamples.add(existingSample1);
+
+        // sample 2 for patient w/igo id 4324_2
+        String cmoId2 = "C-1235-G002-d02";
+        SampleMetadata existingSample2 = getSampleMetadataWithCmoLabel("4324_2",
+                cmoPatientId, "Organoid", cmoId2);
+        existingSamples.add(existingSample2);
+
+        // sample 1 with an update that does not affect the generated cmo label
+        IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.ORGANOID, NucleicAcid.DNA);
+        String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
+                updatedSample, existingSamples);
+        // confirm that the label generated would still increment even though it will
+        // be determined that the sample cmo label does NOT need to be updated for this sample
+        Assert.assertEquals("C-1235-G003-d03", updatedCmoLabel);
+        Boolean needsUpdates =
+                cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
+        Assert.assertFalse(needsUpdates);
+    }
+
+    /**
+     * Tests assertion of IGO sample THAT DOES require a cmo label update since
+     * at least one of the relevant metadata fields that are used to generate the label
+     * differs from the corresponding metadata used for the label of the existing IGO sample.
+     * @throws Exception
+     */
+    @Test
+    public void testIgoSampleWithLabelChangingMetadataUpdates() throws Exception {
+        String requestId = "5432_P";
+        String cmoPatientId = "C-1235";
+        List<SampleMetadata> existingSamples = new ArrayList<>();
+
+        // sample 1 for patient w/igo id 4324_1
+        String cmoId1 = "C-1235-G001-d01";
+        SampleMetadata existingSample1 = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Organoid", cmoId1);
+        existingSamples.add(existingSample1);
+
+        // sample 2 for patient w/igo id 4324_2
+        String cmoId2 = "C-1235-G002-d02";
+        SampleMetadata existingSample2 = getSampleMetadataWithCmoLabel("4324_2",
+                cmoPatientId, "Organoid", cmoId2);
+        existingSamples.add(existingSample2);
+
+        // sample 1 with an update that does not affect the generated cmo label
+        IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.ORGANOID, NucleicAcid.RNA);
+        String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
+                updatedSample, existingSamples);
+        Assert.assertEquals("C-1235-G003-r01", updatedCmoLabel);
+        Boolean needsUpdates = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
+        Assert.assertTrue(needsUpdates);
+    }
+
     private SampleMetadata getSampleMetadataWithCmoLabel(String igoId, String cmoPatientId,
             String specimenType, String cmoSampleName) {
         SampleMetadata sample = new SampleMetadata();

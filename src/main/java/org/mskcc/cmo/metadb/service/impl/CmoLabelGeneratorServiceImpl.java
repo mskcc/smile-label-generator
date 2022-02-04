@@ -26,13 +26,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorServiceImpl.class);
-    // example: C-1235-X001-d
+    // example: C-1235-X001-d01
     public static final Pattern CMO_SAMPLE_ID_REGEX =
             Pattern.compile("^C-([a-zA-Z0-9]+)-([NTRMLUPSGX])([0-9]{3})-([d|r])(.*$)");
     // example: JH123-12345T
     public static final Pattern CMO_CELLLINE_ID_REGEX =
             Pattern.compile("^([A-Za-z0-9]+)-([A-Za-z0-9]+)$");
     public static final String CMO_LABEL_SEPARATOR = "-";
+    public static final Integer CMO_PATIENT_ID_GROUP = 1;
+    public static final Integer CMO_SAMPLE_TYPE_ABBREV_GROUP = 2;
     public static final Integer CMO_SAMPLE_COUNTER_GROUP = 3;
     public static final Integer CMO_SAMPLE_COUNTER_STRING_PADDING = 3;
     public static final Integer CMO_SAMPLE_NUCACID_ABBREV_GROUP = 4;
@@ -93,12 +95,59 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         return map;
     }
 
+    /**
+     * Compares the regex groups for 2 CMO labels generated for the same IGO sample.
+     * The padded counter strings encoded in the cmo labels being compared are ignored.
+     * Note: the 'same' IGO sample is determined based on IGO sample ID matching,
+     *  or primaryId if sample metadata provided as universal schema format.
+     * Groups compared:
+     *  1. cmo patient id prefix
+     *  2. sample type abbreviation
+     *  3. nucleic acid abbreviation
+     * @param newCmoLabel
+     * @param existingCmoLabel
+     * @return Boolean
+     */
+    @Override
+    public Boolean igoSampleRequiresLabelUpdate(String newCmoLabel, String existingCmoLabel) {
+        Matcher matcherNewLabel = CMO_SAMPLE_ID_REGEX.matcher(newCmoLabel);
+        Matcher matcherExistingLabel = CMO_SAMPLE_ID_REGEX.matcher(existingCmoLabel);
+        if (!matcherNewLabel.find() || !matcherExistingLabel.find()) {
+            throw new IllegalStateException("New CMO label and/or existing CMO label do not meet CMO ID "
+                    + "regex requirements: new = " + newCmoLabel + ", existingLabel = " + existingCmoLabel);
+        }
+
+        // compare cmo patient id prefix
+        if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_PATIENT_ID_GROUP)) {
+            LOG.info("CMO patient ID differs between incoming IGO sample and matching IGO sample "
+                    + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
+            return Boolean.TRUE;
+        }
+        // compare sample type abbreviation
+        if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_TYPE_ABBREV_GROUP)) {
+            LOG.info("Sample Type abbreviation differs between incoming IGO sample and matching IGO sample "
+                    + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
+            return Boolean.TRUE;
+        }
+        // compare nucleic acid abbreviation
+        if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_NUCACID_ABBREV_GROUP)) {
+            LOG.info("Nucleic Acid abbreviation differs between incoming IGO sample and matching IGO sample "
+                    + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
+    }
+
+    private Boolean compareMatcherGroups(Matcher matcher1, Matcher matcher2, Integer group) {
+        return matcher1.group(group).equalsIgnoreCase(matcher2.group(group));
+    }
+
     @Override
     public String generateCmoSampleLabel(String requestId, IgoSampleManifest sampleManifest,
             List<SampleMetadata> existingSamples) {
         // if sample is a cellline sample then generate a cmo cellline label
         if (isCmoCelllineSample(sampleManifest)) {
-            return generateCmoCelllineSampleLabel(requestId, sampleManifest);
+            return generateCmoCelllineSampleLabel(requestId, sampleManifest.getInvestigatorSampleId());
         }
         String patientId = sampleManifest.getCmoPatientId();
 
@@ -125,26 +174,67 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
-        String formattedCmoLabel = String.format("%s-%s%s-%s%s", patientId,
-                sampleTypeAbbreviation, paddedSampleCounter, nucleicAcidAbbreviation,
-                paddedNucAcidCounter);
-        return formattedCmoLabel;
+        return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
+                nucleicAcidAbbreviation, paddedNucAcidCounter);
     }
 
-    /**
-     * Resolve the nucleic acid abbreviation for the generated cmo sample label.
-     * @param sampleManifest
-     * @return
-     */
-    private String resolveNucleicAcidAbbreviation(IgoSampleManifest sampleManifest) {
+    @Override
+    public String generateCmoSampleLabel(SampleMetadata sampleMetadata,
+            List<SampleMetadata> existingSamples) {
+        // if sample is a cellline sample then generate a cmo cellline label
+        if (isCmoCelllineSample(sampleMetadata.getSampleClass(), sampleMetadata.getCmoSampleIdFields())) {
+            return generateCmoCelllineSampleLabel(sampleMetadata.getIgoRequestId(),
+                    sampleMetadata.getInvestigatorSampleId());
+        }
+        String patientId = sampleMetadata.getCmoPatientId();
+
+        // resolve sample type abbreviation
+        String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
+                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType());
+        if (sampleTypeAbbreviation == null) {
+            throw new RuntimeException("Could not resolve sample type abbreviation "
+                    + "from specimen type ('sampleClass'), sample origin, or sample "
+                    + "class ('sampleType'): " + sampleMetadata.toString());
+        }
+
+        // get next incremement value for cmo sample counter
+        Integer nextSampleCounter = getNextSampleIncrement(existingSamples);
+        String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
+                CMO_SAMPLE_COUNTER_STRING_PADDING);
+
+        // resolve nucleic acid abbreviation
+        String sampleTypeString = sampleMetadata.getCmoSampleIdFields().get("sampleType");
+        String recipe = sampleMetadata.getCmoSampleIdFields().get("recipe");
+        String naToExtract = sampleMetadata.getCmoSampleIdFields().get("naToExtract");
+        String nucleicAcidAbbreviation =
+                resolveNucleicAcidAbbreviation(sampleTypeString, recipe, naToExtract);
+        if (nucleicAcidAbbreviation == null) {
+            throw new RuntimeException("Could not resolve nucleic acid abbreviation from sample "
+                    + "type or naToExtract: " + sampleMetadata.toString());
+        }
+        // get next increment for nucleic acid abbreviation
+        Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
+        String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
+                CMO_SAMPLE_NUCACID_COUNTER_PADDING);
+
+        return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
+                nucleicAcidAbbreviation, paddedNucAcidCounter);
+    }
+
+    private String getFormattedCmoSampleLabel(String patientId, String sampleTypeAbbreviation,
+            String paddedSampleCounter, String nucleicAcidAbbreviation, String paddedNucAcidCounter) {
+        return String.format("%s-%s%s-%s%s", patientId, sampleTypeAbbreviation, paddedSampleCounter,
+                nucleicAcidAbbreviation, paddedNucAcidCounter);
+    }
+
+    private String resolveNucleicAcidAbbreviation(String sampleTypeString,
+            String recipe, String naToExtract) {
         try {
-            String sampleTypeString = sampleManifest.getCmoSampleIdFields().get("sampleType");
             SampleType sampleType = SampleType.fromString(sampleTypeString);
             // resolve from sample type if not null
             // if pooled library then resolve value based on recipe
             switch (sampleType) {
                 case POOLED_LIBRARY:
-                    String recipe = sampleManifest.getCmoSampleIdFields().get("recipe");
                     return recipe.equalsIgnoreCase("RNASeq")
                             ? "r" : "d";
                 case DNA:
@@ -162,8 +252,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // if nucleic acid abbreviation is still unknown then attempt to resolve from
         // sample metadata --> cmo sample id fields --> naToExtract
         try {
-            NucleicAcid nucAcid = NucleicAcid.fromString(
-                    sampleManifest.getCmoSampleIdFields().get("naToExtract"));
+            NucleicAcid nucAcid = NucleicAcid.fromString(naToExtract);
             if (nucAcid != null) {
                 switch (nucAcid) {
                     case DNA:
@@ -185,20 +274,28 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     }
 
     /**
-     * Resolves the sample type abbreviation for the generated cmo sample label.
+     * Resolve the nucleic acid abbreviation for the generated cmo sample label.
      * @param sampleManifest
      * @return
      */
-    private String resolveSampleTypeAbbreviation(IgoSampleManifest sampleManifest) {
+    private String resolveNucleicAcidAbbreviation(IgoSampleManifest sampleManifest) {
+        String sampleTypeString = sampleManifest.getCmoSampleIdFields().get("sampleType");
+        String recipe = sampleManifest.getCmoSampleIdFields().get("recipe");
+        String naToExtract = sampleManifest.getCmoSampleIdFields().get("naToExtract");
+        return resolveNucleicAcidAbbreviation(sampleTypeString, recipe, naToExtract);
+    }
+
+    private String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
+            String cmoSampleClassValue) {
         try {
-            SpecimenType specimenType = SpecimenType.fromValue(sampleManifest.getSpecimenType());
+            SpecimenType specimenType = SpecimenType.fromValue(specimenTypeValue);
             // if can be mapped directly from specimen type then use corresponding abbreviation
             if (SPECIMEN_TYPE_ABBREV_MAP.containsKey(specimenType)) {
                 return SPECIMEN_TYPE_ABBREV_MAP.get(specimenType);
             }
             // if specimen type is cfDNA and sample origin is known type for cfDNA samples
             // then return corresponding abbreviation
-            SampleOrigin sampleOrigin = SampleOrigin.fromValue(sampleManifest.getSampleOrigin());
+            SampleOrigin sampleOrigin = SampleOrigin.fromValue(sampleOriginValue);
             if (sampleOrigin != null) {
                 if (specimenType.equals(SpecimenType.CFDNA)
                         && KNOWN_CFDNA_SAMPLE_ORIGINS.contains(sampleOrigin)) {
@@ -211,11 +308,21 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             }
         } catch (Exception e) {
             LOG.debug("Could not resolve specimen type acid from 'specimenType': "
-                    + sampleManifest.toString());
+                    + specimenTypeValue);
         }
         // if abbreviation is still not resolved then try to resolve from sample class
-        CmoSampleClass sampleClass = CmoSampleClass.fromValue(sampleManifest.getCmoSampleClass());
+        CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
         return SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+    }
+
+    /**
+     * Resolves the sample type abbreviation for the generated cmo sample label.
+     * @param sampleManifest
+     * @return
+     */
+    private String resolveSampleTypeAbbreviation(IgoSampleManifest sampleManifest) {
+        return resolveSampleTypeAbbreviation(sampleManifest.getSpecimenType(),
+                sampleManifest.getSampleOrigin(), sampleManifest.getCmoSampleClass());
     }
 
     /**
@@ -305,19 +412,23 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         return maxIncrement + 1;
     }
 
-    private String generateCmoCelllineSampleLabel(String requestId, IgoSampleManifest sample) {
+    private String generateCmoCelllineSampleLabel(String requestId, String sampleInvestigatorId) {
         String formattedRequestId = requestId.replaceAll("[-_]", "");
-        return sample.getInvestigatorSampleId() + CMO_LABEL_SEPARATOR + formattedRequestId;
+        return sampleInvestigatorId + CMO_LABEL_SEPARATOR + formattedRequestId;
+    }
+
+    private Boolean isCmoCelllineSample(String specimenType, Map<String, String> cmoSampleIdFields) {
+        // if specimen type is not cellline or cmo sample id fields are null then return false
+        if (!specimenType.equalsIgnoreCase("CellLine")
+                || cmoSampleIdFields == null) {
+            return  Boolean.FALSE;
+        }
+        String normalizedPatientId = cmoSampleIdFields.get("normalizedPatientId");
+        return (!StringUtils.isBlank(normalizedPatientId)
+                && !normalizedPatientId.equalsIgnoreCase("MRN_REDACTED"));
     }
 
     private Boolean isCmoCelllineSample(IgoSampleManifest sample) {
-        // if specimen type is not cellline or cmo sample id fields are null then return false
-        if (!sample.getSpecimenType().equalsIgnoreCase("CellLine")
-                || sample.getCmoSampleIdFields() == null) {
-            return  Boolean.FALSE;
-        }
-        String normalizedPatientId = sample.getCmoSampleIdFields().get("normalizedPatientId");
-        return (!StringUtils.isBlank(normalizedPatientId)
-                && !normalizedPatientId.equalsIgnoreCase("MRN_REDACTED"));
+        return isCmoCelllineSample(sample.getSpecimenType(), sample.getCmoSampleIdFields());
     }
 }
