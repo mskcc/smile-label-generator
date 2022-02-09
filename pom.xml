@@ -37,13 +37,13 @@
     <jackson.version>2.11.2</jackson.version>
     <!-- metadb messaging -->
     <cmo_metadb_messaging_java.group>com.github.mskcc</cmo_metadb_messaging_java.group>
-    <cmo_metadb_messaging_java.version>1.2.0.RELEASE</cmo_metadb_messaging_java.version>
+    <cmo_metadb_messaging_java.version>1.2.1.RELEASE</cmo_metadb_messaging_java.version>
     <!-- metadb common centralized config properties -->
     <cmo_metadb_common.group>com.github.mskcc</cmo_metadb_common.group>
-    <cmo_metadb_common.version>1.2.0.RELEASE</cmo_metadb_common.version>
+    <cmo_metadb_common.version>1.2.1.RELEASE</cmo_metadb_common.version>
     <!-- metadb server model module -->
     <cmo_metadb_server.group>com.github.mskcc.cmo-metadb</cmo_metadb_server.group>
-    <cmo_metadb_server.version>1.2.1.RELEASE</cmo_metadb_server.version>
+    <cmo_metadb_server.version>6295d3f97512c89b45a70f049dcbfd1767fc266e</cmo_metadb_server.version>
   </properties>
 
   <dependencies>
