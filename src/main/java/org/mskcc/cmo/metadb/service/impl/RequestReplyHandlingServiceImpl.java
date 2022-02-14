@@ -1,6 +1,7 @@
 package org.mskcc.cmo.metadb.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.nats.client.Message;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +23,6 @@ import org.mskcc.cmo.metadb.service.RequestReplyHandlingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import io.nats.client.Message;
 
 /**
  *

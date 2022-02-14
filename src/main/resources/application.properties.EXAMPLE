@@ -15,12 +15,15 @@ nats.truststore_path=
 nats.key_password=
 nats.store_password=
 
-# messaging configuration
+# pub-sub topics
 igo.new_request_topic=
 igo.cmo_label_generator_topic=
 igo.cmo_sample_label_update_topic=
 metadb.sample_update_topic=
+
+# request-reply topics
 request_reply.patient_samples_topic=
+request_reply.cmo_label_generator_topic=
 
 # threading
 num.new_request_handler_threads=
