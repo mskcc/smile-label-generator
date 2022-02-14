@@ -5,6 +5,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
 import org.mskcc.cmo.metadb.service.MessageHandlingService;
+import org.mskcc.cmo.metadb.service.RequestReplyHandlingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -21,6 +22,9 @@ public class CmoLabelGeneratorApp implements CommandLineRunner {
     @Autowired
     private MessageHandlingService messageHandlingService;
 
+    @Autowired
+    private RequestReplyHandlingService requestReplyHandlingService;
+
     private Thread shutdownHook;
     final CountDownLatch cmoLabelGeneratorAppClose = new CountDownLatch(1);
 
@@ -31,6 +35,7 @@ public class CmoLabelGeneratorApp implements CommandLineRunner {
             installShutdownHook();
             messagingGateway.connect();
             messageHandlingService.initialize(messagingGateway);
+            requestReplyHandlingService.initialize(messagingGateway);
             cmoLabelGeneratorAppClose.await();
         } catch (Exception e) {
             e.printStackTrace();
@@ -47,6 +52,7 @@ public class CmoLabelGeneratorApp implements CommandLineRunner {
                     try {
                         messagingGateway.shutdown();
                         messageHandlingService.shutdown();
+                        requestReplyHandlingService.shutdown();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
