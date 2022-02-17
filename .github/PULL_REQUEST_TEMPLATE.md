@@ -33,6 +33,7 @@ Please follow these checklists to help prevent any unexpected issues from being 
 
 ### I. Web service and data model checklist
 Please follow these checks if any changes were made to any classes in the web, service, or persistence layers.
+
 **Data checks:**
 Updates were made to the mocked incoming request data and/or mocked published request data:
 - [ ] [cmo-metadb test data](https://github.com/mskcc/cmo-metadb/tree/master/service/src/test/resources/data)

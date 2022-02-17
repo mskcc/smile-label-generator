@@ -450,7 +450,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
     private Integer getSampleCounterMatchedByIgoId(String primaryId, List<SampleMetadata> existingSamples) {
         for (SampleMetadata sample: existingSamples) {
-            if (sample.getPrimaryId() == primaryId) {
+            if (sample.getPrimaryId().equals(primaryId)) {
                 Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
                 if (matcher.find()) {
                     Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
