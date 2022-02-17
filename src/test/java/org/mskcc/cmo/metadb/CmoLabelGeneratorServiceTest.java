@@ -49,14 +49,14 @@ public class CmoLabelGeneratorServiceTest {
         String modifiedRequestJson = requestJson.getJsonString();
         Assert.assertNotNull(modifiedRequestJson);
     }
-    
+
     /**
      * testCmoLabelGenerationForSampleUpdate
      * Tests if a new cmoLabel is properly generated for
      *      a sample with metadata updates including igoId/primaryId
      *  Expected behavior: Should return a label with
      *      incremented sample count and new Sample Type Abbreviation
-     * @throws JsonProcessingException 
+     * @throws JsonProcessingException
      */
     @Test
     public void testCmoLabelGenForSampleUpdate() throws JsonProcessingException {
@@ -66,17 +66,17 @@ public class CmoLabelGeneratorServiceTest {
         Map<String, String> mappedRequestJson = mapper.readValue(requestJson.getJsonString(), Map.class);
         SampleMetadata[] samples = mapper.convertValue(mappedRequestJson.get("samples"),
                 SampleMetadata[].class);
-        
+
         // existing sample for patientId: C-MP789JR
         List<SampleMetadata> existingSamples = new ArrayList<>();
         existingSamples.add(samples[0]);
         existingSamples.add(samples[1]);
-        
+
         // updated SampleMetadata
         SampleMetadata updatedSample = new SampleMetadata(samples[0]);
         updatedSample.setSampleClass("NewSpecimen");
         updatedSample.setPrimaryId("newPrimaryId");
-        
+
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
@@ -90,8 +90,8 @@ public class CmoLabelGeneratorServiceTest {
      *     a sample with metadata with updated cmoPatientId and primaryId/igoId
      * Expected behavior: Should return a label with
      *     incremented sample count and new cmoPatientId
-     * @throws JsonProcessingException 
-     * @throws JsonMappingException 
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
      */
     @Test
     public void testCmoLabelGenForSampleWithPatientCorrection()
@@ -103,33 +103,33 @@ public class CmoLabelGeneratorServiceTest {
                 requestJson.getJsonString(), Map.class);
         SampleMetadata[] samples = mapper.convertValue(mappedRequestJson.get("samples"),
                 SampleMetadata[].class);
-                
+
         // existing sample for patientId: C-MP789JR
         List<SampleMetadata> existingSamples = new ArrayList<>();
         existingSamples.add(samples[0]);
         existingSamples.add(samples[1]);
-        
+
         // updated SampleMetadata
         SampleMetadata updatedSample = new SampleMetadata(samples[0]);
         updatedSample.setCmoPatientId("C-newPatient");
         updatedSample.setPrimaryId("newIgoId");
-        
+
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
 
         Assert.assertEquals("C-newPatient-X003-d02", newCmoLabel);
-        
+
     }
-    
+
     /**
      * testCmoLabelGenForExistingSampleWithPatientCorrection
      * Tests if a new cmoLabel is properly generated for
      *     a sample with metadata with updated cmoPatientId and primaryId/igoId
      * Expected behavior: Should return a label with
      *     only a new cmoPatientId change
-     * @throws JsonProcessingException 
-     * @throws JsonMappingException 
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
      */
     @Test
     public void testCmoLabelGenForExistingSampleWithPatientCorrection()
@@ -141,16 +141,16 @@ public class CmoLabelGeneratorServiceTest {
                 requestJson.getJsonString(), Map.class);
         SampleMetadata[] samples = mapper.convertValue(mappedRequestJson.get("samples"),
                 SampleMetadata[].class);
-                
+
         // existing sample for patientId: C-MP789JR
         List<SampleMetadata> existingSamples = new ArrayList<>();
         existingSamples.add(samples[0]);
         existingSamples.add(samples[1]);
-        
+
         // updated SampleMetadata
         SampleMetadata updatedSample = new SampleMetadata(samples[0]);
         updatedSample.setCmoPatientId("C-newPatient");
-        
+
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);

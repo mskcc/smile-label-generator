@@ -157,9 +157,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     + " sample origin, or sample class: " + sampleManifest.toString());
         }
 
-        // get next incremement value for cmo sample counter
-        Integer nextSampleCounter = getNextSampleIncrement(sampleManifest.getIgoId(), existingSamples);
-        // this increment should be reduced by one if the sample shares 
+        // if getSampleCounterMatchedByIgoId is not null, this means primaryId of given sample was found in
+        // existing samples list. In this case we would use the counter of the matching sample. Else, we
+        // get next incremement value for cmo sample counter using getNextSampleIncrement
+        Integer matchedSampleCounterMatchedByIgoId = getSampleCounterMatchedByIgoId(sampleManifest.getIgoId(), existingSamples);
+        Integer nextSampleCounter = matchedSampleCounterMatchedByIgoId != null ? matchedSampleCounterMatchedByIgoId
+                : getNextSampleIncrement(sampleManifest.getIgoId(), existingSamples);
+        // this increment should be reduced by one if the sample shares
         String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -173,7 +177,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
-        
+
         String patientId = sampleManifest.getCmoPatientId();
 
         return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
@@ -198,8 +202,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     + "class ('sampleType'): " + sampleMetadata.toString());
         }
 
-        // get next incremement value for cmo sample counter
-        Integer nextSampleCounter = getNextSampleIncrement(sampleMetadata.getPrimaryId(), existingSamples);
+        // if getSampleCounterMatchedByIgoId is not null, this means primaryId of given sample was found in
+        // existing samples list. In this case we would use the counter of the matching sample. Else, we
+        // get next incremement value for cmo sample counter using getNextSampleIncrement
+        Integer matchedSampleCounterMatchedByIgoId = getSampleCounterMatchedByIgoId(sampleMetadata.getPrimaryId(), existingSamples);
+        Integer nextSampleCounter = matchedSampleCounterMatchedByIgoId != null ? matchedSampleCounterMatchedByIgoId
+                : getNextSampleIncrement(sampleMetadata.getPrimaryId(), existingSamples);
         String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -217,12 +225,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
-        
+
         String patientId = sampleMetadata.getCmoPatientId();
 
         return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
-         
+
     }
 
     private String getFormattedCmoSampleLabel(String patientId, String sampleTypeAbbreviation,
@@ -362,9 +370,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             // increment assigned to the current sample is in group 3 of matcher
             if (matcher.find()) {
                 Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
-                if (sample.getPrimaryId() == primaryId) {
-                    return currentIncrement;
-                }
                 if (currentIncrement > maxIncrement) {
                     maxIncrement = currentIncrement;
                 }
@@ -438,13 +443,17 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     private Boolean isCmoCelllineSample(IgoSampleManifest sample) {
         return isCmoCelllineSample(sample.getSpecimenType(), sample.getCmoSampleIdFields());
     }
-    
-    private Boolean foundSampleInExistingSamples(String primaryId, List<SampleMetadata> existingSamples) {
+
+    private Integer getSampleCounterMatchedByIgoId(String primaryId, List<SampleMetadata> existingSamples) {
         for (SampleMetadata sample: existingSamples) {
             if (sample.getPrimaryId() == primaryId) {
-                return Boolean.TRUE;
+                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+                if (matcher.find()) {
+                    Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                    return currentIncrement;
+                }
             }
         }
-        return Boolean.FALSE;
+        return null;
     }
 }

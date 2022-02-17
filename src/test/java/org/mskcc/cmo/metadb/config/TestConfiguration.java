@@ -26,7 +26,7 @@ import org.springframework.core.io.ClassPathResource;
  */
 @Configuration
 @ComponentScan(basePackages = "org.mskcc.cmo.common.*")
-public class TestConfiguration {   
+public class TestConfiguration {
     private final ObjectMapper mapper = new ObjectMapper();
     private final String MOCKED_REQUEST_DATA_DETAILS_FILEPATH = "data/mocked_request_data_details.txt";
     private final String MOCKED_JSON_DATA_DIR = "data";
@@ -56,7 +56,7 @@ public class TestConfiguration {
     /**
      * Generates the mocked request json data map;
      * @return Map
-     * @throws IOException 
+     * @throws IOException
      */
     @Bean(name = "mockedRequestJsonDataMap")
     public Map<String, MockJsonTestData> mockedRequestJsonDataMap() throws IOException {
