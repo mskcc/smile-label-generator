@@ -157,16 +157,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     + " sample origin, or sample class: " + sampleManifest.toString());
         }
 
-        // if getSampleCounterMatchedByIgoId is not null, this means primaryId of given sample was found in
-        // existing samples list. In this case we would use the counter of the matching sample. Else, we
-        // get next incremement value for cmo sample counter using getNextSampleIncrement
-        Integer matchedSampleCounterMatchedByIgoId = getSampleCounterMatchedByIgoId(
-                sampleManifest.getIgoId(), existingSamples);
-        Integer nextSampleCounter = matchedSampleCounterMatchedByIgoId != null
-                ? matchedSampleCounterMatchedByIgoId
-                : getNextSampleIncrement(existingSamples);
-        // this increment should be reduced by one if the sample shares
-        String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
+        // resolve the sample counter value to use for the cmo label
+        Integer sampleCounter =  resolveSampleIncrementValue(sampleManifest.getIgoId(), existingSamples);
+        String paddedSampleCounter = getPaddedIncrementString(sampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
         // resolve nucleic acid abbreviation
@@ -204,15 +197,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     + "class ('sampleType'): " + sampleMetadata.toString());
         }
 
-        // if getSampleCounterMatchedByIgoId is not null, this means primaryId of given sample was found in
-        // existing samples list. In this case we would use the counter of the matching sample. Else, we
-        // get next incremement value for cmo sample counter using getNextSampleIncrement
-        Integer matchedSampleCounterMatchedByIgoId = getSampleCounterMatchedByIgoId(
-                sampleMetadata.getPrimaryId(), existingSamples);
-        Integer nextSampleCounter = matchedSampleCounterMatchedByIgoId != null
-                ? matchedSampleCounterMatchedByIgoId
-                : getNextSampleIncrement(existingSamples);
-        String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
+        // resolve the sample counter value to use for the cmo label
+        Integer sampleCounter =  resolveSampleIncrementValue(sampleMetadata.getPrimaryId(), existingSamples);
+        String paddedSampleCounter = getPaddedIncrementString(sampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
         // resolve nucleic acid abbreviation
@@ -352,9 +339,38 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     }
 
     /**
+     * Given a primaryId and list of existing samples, returns the increment to use
+     * for the padded sample counter string embedded in the cmo sample label.
+     * @param primaryId
+     * @param existingSamples
+     * @return Integer
+     */
+    private Integer resolveSampleIncrementValue(String primaryId, List<SampleMetadata> existingSamples) {
+        if (existingSamples.isEmpty()) {
+            return 1;
+        }
+
+        // if we find a match by the primary id then return the increment parsed from
+        // the matching sample's current cmo label
+        for (SampleMetadata sample : existingSamples) {
+            if (sample.getPrimaryId().equalsIgnoreCase(primaryId)) {
+                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+                if (matcher.find()) {
+                    Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                    return currentIncrement;
+                }
+            }
+        }
+
+        // assuming that a match by the primary id has not been identified
+        // then we can use the next sample increment logic like before
+        return getNextSampleIncrement(existingSamples);
+    }
+
+    /**
      * Returns the next sample increment.
      * @param samples
-     * @return
+     * @return Integer
      */
     private Integer getNextSampleIncrement(List<SampleMetadata> samples) {
         // return 1 if samples is empty
@@ -448,16 +464,4 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         return isCmoCelllineSample(sample.getSpecimenType(), sample.getCmoSampleIdFields());
     }
 
-    private Integer getSampleCounterMatchedByIgoId(String primaryId, List<SampleMetadata> existingSamples) {
-        for (SampleMetadata sample: existingSamples) {
-            if (sample.getPrimaryId().equals(primaryId)) {
-                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
-                if (matcher.find()) {
-                    Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
-                    return currentIncrement;
-                }
-            }
-        }
-        return null;
-    }
 }
