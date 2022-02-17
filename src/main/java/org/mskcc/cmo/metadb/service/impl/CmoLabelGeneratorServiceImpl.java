@@ -158,12 +158,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
 
         // get next incremement value for cmo sample counter
-        Integer nextSampleCounter = getNextSampleIncrement(existingSamples);
-        // if the sample shares igoId/primaryId with a sample in existingSamples,
-        // this should reduce the counter by one or else remain as is
-        if (foundSampleInExistingSamples(sampleManifest.getIgoId(), existingSamples)) {
-            nextSampleCounter--;
-        }
+        Integer nextSampleCounter = getNextSampleIncrement(sampleManifest.getIgoId(), existingSamples);
         // this increment should be reduced by one if the sample shares 
         String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
@@ -204,10 +199,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
 
         // get next incremement value for cmo sample counter
-        Integer nextSampleCounter = getNextSampleIncrement(existingSamples);
-        if (foundSampleInExistingSamples(sampleMetadata.getPrimaryId(), existingSamples)) {
-            nextSampleCounter = nextSampleCounter - 1;
-        }
+        Integer nextSampleCounter = getNextSampleIncrement(sampleMetadata.getPrimaryId(), existingSamples);
         String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -352,7 +344,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @param samples
      * @return
      */
-    private Integer getNextSampleIncrement(List<SampleMetadata> samples) {
+    private Integer getNextSampleIncrement(String primaryId, List<SampleMetadata> samples) {
         // return 1 if samples is empty
         if (samples.isEmpty()) {
             return 1;
@@ -370,6 +362,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             // increment assigned to the current sample is in group 3 of matcher
             if (matcher.find()) {
                 Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                if (sample.getPrimaryId() == primaryId) {
+                    return currentIncrement;
+                }
                 if (currentIncrement > maxIncrement) {
                     maxIncrement = currentIncrement;
                 }

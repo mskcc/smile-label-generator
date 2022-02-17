@@ -155,6 +155,6 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
 
-        Assert.assertEquals("C-newPatient-X002-d02", newCmoLabel);
+        Assert.assertEquals("C-newPatient-X001-d02", newCmoLabel);
     }
 }
