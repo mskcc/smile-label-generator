@@ -42,8 +42,8 @@
     <cmo_metadb_common.group>com.github.mskcc</cmo_metadb_common.group>
     <cmo_metadb_common.version>1.2.0.RELEASE</cmo_metadb_common.version>
     <!-- metadb server model module -->
-    <cmo_metadb_server.group>com.github.mskcc.cmo-metadb</cmo_metadb_server.group>
-    <cmo_metadb_server.version>6295d3f97512c89b45a70f049dcbfd1767fc266e</cmo_metadb_server.version>
+    <cmo_metadb_server.group>com.github.divyamadala30.cmo-metadb</cmo_metadb_server.group>
+    <cmo_metadb_server.version>299eadd913eebd242b49685d54200b3b9c3e28a0</cmo_metadb_server.version>
   </properties>
 
   <dependencies>

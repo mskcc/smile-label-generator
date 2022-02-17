@@ -332,7 +332,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 updatedSample, existingSamples);
         // confirm that the label generated would still increment even though it will
         // be determined that the sample cmo label does NOT need to be updated for this sample
-        Assert.assertEquals("C-1235-G003-d03", updatedCmoLabel);
+        Assert.assertEquals("C-1235-G002-d03", updatedCmoLabel);
         Boolean needsUpdates =
                 cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assert.assertFalse(needsUpdates);
@@ -367,7 +367,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.ORGANOID, NucleicAcid.RNA);
         String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 updatedSample, existingSamples);
-        Assert.assertEquals("C-1235-G003-r01", updatedCmoLabel);
+        Assert.assertEquals("C-1235-G002-r01", updatedCmoLabel);
         Boolean needsUpdates = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assert.assertTrue(needsUpdates);
     }

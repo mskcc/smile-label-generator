@@ -149,7 +149,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         if (isCmoCelllineSample(sampleManifest)) {
             return generateCmoCelllineSampleLabel(requestId, sampleManifest.getInvestigatorSampleId());
         }
-        String patientId = sampleManifest.getCmoPatientId();
 
         // resolve sample type abbreviation
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleManifest);
@@ -160,6 +159,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // get next incremement value for cmo sample counter
         Integer nextSampleCounter = getNextSampleIncrement(existingSamples);
+        // if the sample shares igoId/primaryId with a sample in existingSamples,
+        // this should reduce the counter by one or else remain as is
+        if (foundSampleInExistingSamples(sampleManifest.getIgoId(), existingSamples)) {
+            nextSampleCounter--;
+        }
+        // this increment should be reduced by one if the sample shares 
         String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -173,6 +178,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
+        
+        String patientId = sampleManifest.getCmoPatientId();
 
         return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
@@ -186,7 +193,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return generateCmoCelllineSampleLabel(sampleMetadata.getIgoRequestId(),
                     sampleMetadata.getInvestigatorSampleId());
         }
-        String patientId = sampleMetadata.getCmoPatientId();
 
         // resolve sample type abbreviation
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
@@ -199,6 +205,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // get next incremement value for cmo sample counter
         Integer nextSampleCounter = getNextSampleIncrement(existingSamples);
+        if (foundSampleInExistingSamples(sampleMetadata.getPrimaryId(), existingSamples)) {
+            nextSampleCounter = nextSampleCounter - 1;
+        }
         String paddedSampleCounter = getPaddedIncrementString(nextSampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -216,9 +225,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
+        
+        String patientId = sampleMetadata.getCmoPatientId();
 
         return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
+         
     }
 
     private String getFormattedCmoSampleLabel(String patientId, String sampleTypeAbbreviation,
@@ -430,5 +442,14 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
     private Boolean isCmoCelllineSample(IgoSampleManifest sample) {
         return isCmoCelllineSample(sample.getSpecimenType(), sample.getCmoSampleIdFields());
+    }
+    
+    private Boolean foundSampleInExistingSamples(String primaryId, List<SampleMetadata> existingSamples) {
+        for (SampleMetadata sample: existingSamples) {
+            if (sample.getPrimaryId() == primaryId) {
+                return Boolean.TRUE;
+            }
+        }
+        return Boolean.FALSE;
     }
 }
