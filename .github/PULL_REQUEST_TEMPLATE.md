@@ -31,7 +31,7 @@ Include specific tasks in the order they need to be done in. Include links to sp
 
 Please follow these checklists to help prevent any unexpected issues from being introduced by the changes in this pull request. If an item does not apply then indicate so by surrounding the line item with `~~` to strikethrough the text. See [basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax) for more information.
 
-### I. Web service and data model checklist
+### I. Data model checklist
 Please follow these checks if any changes were made to any classes in the web, service, or persistence layers.
 
 **Data checks:**
@@ -41,8 +41,6 @@ Updates were made to the mocked incoming request data and/or mocked published re
 - [ ] [cmo-metadb-label-generator test data](https://github.com/mskcc/cmo-metadb-label-generator/tree/master/src/test/resources/data)
 
 **Code checks:**
-- [ ] Endpoints were tested to ensure their integrity.
-- [ ] Screenshots have been provided to demonstrate changes made to the response body JSON schema and/or swagger page.
 - [ ] Unit tests were updated in relation to updates to the mocked test data.
 
 ### II. Message handlers checklist:
