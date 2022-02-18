@@ -57,9 +57,11 @@ public class CmoLabelGeneratorServiceTest {
      *  Expected behavior: Should return a label with
      *      incremented sample count and new Sample Type Abbreviation
      * @throws JsonProcessingException
+     * @throws CloneNotSupportedException 
+     * @throws IllegalArgumentException 
      */
     @Test
-    public void testCmoLabelGenForSampleUpdate() throws JsonProcessingException {
+    public void testCmoLabelGenForSampleUpdate() throws JsonProcessingException, IllegalArgumentException, CloneNotSupportedException {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockPublishedRequest1JsonDataWith2T2N");
         // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
@@ -73,7 +75,8 @@ public class CmoLabelGeneratorServiceTest {
         existingSamples.add(samples[1]);
 
         // updated SampleMetadata
-        SampleMetadata updatedSample = new SampleMetadata(samples[0]);
+        SampleMetadata updatedSample = mapper.convertValue(
+                samples[0].clone(), SampleMetadata.class);
         updatedSample.setSampleClass("NewSpecimen");
         updatedSample.setPrimaryId("newPrimaryId");
 
@@ -92,10 +95,12 @@ public class CmoLabelGeneratorServiceTest {
      *     incremented sample count and new cmoPatientId
      * @throws JsonProcessingException
      * @throws JsonMappingException
+     * @throws CloneNotSupportedException 
+     * @throws IllegalArgumentException 
      */
     @Test
     public void testCmoLabelGenForSampleWithPatientCorrection()
-            throws JsonMappingException, JsonProcessingException {
+            throws JsonMappingException, JsonProcessingException, IllegalArgumentException, CloneNotSupportedException {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockPublishedRequest1JsonDataWith2T2N");
         // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
@@ -110,7 +115,8 @@ public class CmoLabelGeneratorServiceTest {
         existingSamples.add(samples[1]);
 
         // updated SampleMetadata
-        SampleMetadata updatedSample = new SampleMetadata(samples[0]);
+        SampleMetadata updatedSample = mapper.convertValue(
+                samples[0].clone(), SampleMetadata.class);
         updatedSample.setCmoPatientId("C-newPatient");
         updatedSample.setPrimaryId("newIgoId");
 
@@ -130,10 +136,12 @@ public class CmoLabelGeneratorServiceTest {
      *     only a new cmoPatientId change
      * @throws JsonProcessingException
      * @throws JsonMappingException
+     * @throws CloneNotSupportedException 
+     * @throws IllegalArgumentException 
      */
     @Test
     public void testCmoLabelGenForExistingSampleWithPatientCorrection()
-            throws JsonMappingException, JsonProcessingException {
+            throws JsonMappingException, JsonProcessingException, IllegalArgumentException, CloneNotSupportedException {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockPublishedRequest1JsonDataWith2T2N");
         // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
@@ -148,7 +156,8 @@ public class CmoLabelGeneratorServiceTest {
         existingSamples.add(samples[1]);
 
         // updated SampleMetadata
-        SampleMetadata updatedSample = new SampleMetadata(samples[0]);
+        SampleMetadata updatedSample = mapper.convertValue(
+                samples[0].clone(), SampleMetadata.class);
         updatedSample.setCmoPatientId("C-newPatient");
 
         // generate cmoLabel for sample with updates
