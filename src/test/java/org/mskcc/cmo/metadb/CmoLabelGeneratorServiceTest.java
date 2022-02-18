@@ -51,7 +51,6 @@ public class CmoLabelGeneratorServiceTest {
     }
 
     /**
-     * testCmoLabelGenerationForSampleUpdate
      * Tests if a new cmoLabel is properly generated for
      *      a sample with metadata updates including igoId/primaryId
      *  Expected behavior: Should return a label with
@@ -61,7 +60,8 @@ public class CmoLabelGeneratorServiceTest {
      * @throws IllegalArgumentException 
      */
     @Test
-    public void testCmoLabelGenForSampleUpdate() throws JsonProcessingException, IllegalArgumentException, CloneNotSupportedException {
+    public void testCmoLabelGenForSampleUpdate() throws JsonProcessingException,
+            IllegalArgumentException, CloneNotSupportedException {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockPublishedRequest1JsonDataWith2T2N");
         // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
@@ -83,12 +83,11 @@ public class CmoLabelGeneratorServiceTest {
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
-
+        // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-MP789JR-P003-d02", newCmoLabel);
     }
 
     /**
-     * testCmoLabelGenForSampleWithPatientCorrection
      * Tests if a new cmoLabel is properly generated for
      *     a sample with metadata with updated cmoPatientId and primaryId/igoId
      * Expected behavior: Should return a label with
@@ -100,7 +99,8 @@ public class CmoLabelGeneratorServiceTest {
      */
     @Test
     public void testCmoLabelGenForSampleWithPatientCorrection()
-            throws JsonMappingException, JsonProcessingException, IllegalArgumentException, CloneNotSupportedException {
+            throws JsonMappingException, JsonProcessingException,
+            IllegalArgumentException, CloneNotSupportedException {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockPublishedRequest1JsonDataWith2T2N");
         // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
@@ -124,12 +124,12 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
 
+        // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X003-d02", newCmoLabel);
 
     }
 
     /**
-     * testCmoLabelGenForExistingSampleWithPatientCorrection
      * Tests if a new cmoLabel is properly generated for
      *     a sample with metadata with updated cmoPatientId and primaryId/igoId
      * Expected behavior: Should return a label with
@@ -141,7 +141,8 @@ public class CmoLabelGeneratorServiceTest {
      */
     @Test
     public void testCmoLabelGenForExistingSampleWithPatientCorrection()
-            throws JsonMappingException, JsonProcessingException, IllegalArgumentException, CloneNotSupportedException {
+            throws JsonMappingException, JsonProcessingException,
+            IllegalArgumentException, CloneNotSupportedException {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockPublishedRequest1JsonDataWith2T2N");
         // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
@@ -164,6 +165,7 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
 
+        // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X001-d02", newCmoLabel);
     }
 }

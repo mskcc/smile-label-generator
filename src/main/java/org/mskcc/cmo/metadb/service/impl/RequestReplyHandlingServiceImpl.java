@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
  * @author DivyaMadala
  *
  */
-
 @Service
 public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingService {
 
@@ -55,7 +54,6 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
     private static final BlockingQueue<ReplyInfo> cmoLabelGeneratorReqReplyQueue =
             new LinkedBlockingQueue<ReplyInfo>();
     private static CountDownLatch cmoLabelGeneratorHandlerShutdownLatch;
-
 
     private class ReplyInfo {
         String requestMessage;
