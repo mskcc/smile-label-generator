@@ -1,4 +1,4 @@
-package org.mskcc.cmo.metadb;
+package org.mskcc.smile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,12 +8,12 @@ import java.util.Map;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mskcc.cmo.common.enums.NucleicAcid;
-import org.mskcc.cmo.common.enums.SpecimenType;
-import org.mskcc.cmo.metadb.config.TestConfiguration;
-import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.model.igo.IgoSampleManifest;
-import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
+import org.mskcc.smile.commons.enums.NucleicAcid;
+import org.mskcc.smile.commons.enums.SpecimenType;
+import org.mskcc.smile.config.TestConfiguration;
+import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.igo.IgoSampleManifest;
+import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;

@@ -7,5 +7,5 @@ RUN mvn clean install
 
 # copy jar and set entrypoint
 FROM openjdk:8-slim
-COPY --from=0 /label-generator/target/cmo_label_generator.jar /label-generator/cmo_label_generator.jar
+COPY --from=0 /label-generator/target/smile_label_generator.jar /label-generator/smile_label_generator.jar
 ENTRYPOINT ["java"]
