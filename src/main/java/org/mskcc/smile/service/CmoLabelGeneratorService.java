@@ -1,8 +1,8 @@
-package org.mskcc.cmo.metadb.service;
+package org.mskcc.smile.service;
 
 import java.util.List;
-import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.model.igo.IgoSampleManifest;
+import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.igo.IgoSampleManifest;
 
 /**
  *

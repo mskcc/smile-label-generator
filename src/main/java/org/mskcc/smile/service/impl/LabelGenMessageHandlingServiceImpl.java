@@ -1,4 +1,4 @@
-package org.mskcc.cmo.metadb.service.impl;
+package org.mskcc.smile.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,11 +20,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
 import org.mskcc.cmo.messaging.MessageConsumer;
-import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.model.igo.IgoSampleManifest;
-import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
-import org.mskcc.cmo.metadb.service.MessageHandlingService;
-import org.mskcc.cmo.metadb.service.util.RequestStatusLogger;
+import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.igo.IgoSampleManifest;
+import org.mskcc.smile.service.CmoLabelGeneratorService;
+import org.mskcc.smile.service.MessageHandlingService;
+import org.mskcc.smile.service.util.RequestStatusLogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     @Value("${igo.cmo_sample_label_update_topic}")
     private String CMO_LABEL_UPDATE_TOPIC;
 
-    @Value("${metadb.sample_update_topic}")
+    @Value("${smile.sample_update_topic}")
     private String IGO_SAMPLE_UPDATE_TOPIC;
 
     @Value("${num.new_request_handler_threads}")

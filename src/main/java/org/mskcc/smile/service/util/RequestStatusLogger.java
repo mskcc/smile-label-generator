@@ -1,11 +1,11 @@
-package org.mskcc.cmo.metadb.service.util;
+package org.mskcc.smile.service.util;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.apache.commons.lang3.StringUtils;
-import org.mskcc.cmo.common.FileUtil;
+import org.mskcc.smile.commons.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -34,7 +34,7 @@ public class RequestStatusLogger {
      * - CMO_REQUEST_MISSING_REQ_FIELDS: a CMO request with sample metadata
      *        that is missing required fields (cmoPatientId, baitSet)
      * - REQUEST_PARSING_ERROR: json parsing exception thrown
-     * - CMO_REQUEST_FILTER_SKIPPED_REQUEST: applies if metadb server is running
+     * - CMO_REQUEST_FILTER_SKIPPED_REQUEST: applies if smile server is running
      *        with the cmoRequestFilter enabled and a non-cmo request is encountered
      * - REQUEST_WITH_FAILED_CMO_LABEL_GENERATION: request contains samples for which a
      *        CMO label was not successfully generated

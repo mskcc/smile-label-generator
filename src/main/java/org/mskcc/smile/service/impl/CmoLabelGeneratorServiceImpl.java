@@ -1,4 +1,4 @@
-package org.mskcc.cmo.metadb.service.impl;
+package org.mskcc.smile.service.impl;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,14 +9,14 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.mskcc.cmo.common.enums.CmoSampleClass;
-import org.mskcc.cmo.common.enums.NucleicAcid;
-import org.mskcc.cmo.common.enums.SampleOrigin;
-import org.mskcc.cmo.common.enums.SampleType;
-import org.mskcc.cmo.common.enums.SpecimenType;
-import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.model.igo.IgoSampleManifest;
-import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
+import org.mskcc.smile.commons.enums.CmoSampleClass;
+import org.mskcc.smile.commons.enums.NucleicAcid;
+import org.mskcc.smile.commons.enums.SampleOrigin;
+import org.mskcc.smile.commons.enums.SampleType;
+import org.mskcc.smile.commons.enums.SpecimenType;
+import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.igo.IgoSampleManifest;
+import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.stereotype.Service;
 
 /**

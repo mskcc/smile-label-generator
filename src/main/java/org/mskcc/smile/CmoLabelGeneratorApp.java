@@ -1,18 +1,18 @@
-package org.mskcc.cmo.metadb;
+package org.mskcc.smile;
 
 import java.util.concurrent.CountDownLatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
-import org.mskcc.cmo.metadb.service.MessageHandlingService;
-import org.mskcc.cmo.metadb.service.RequestReplyHandlingService;
+import org.mskcc.smile.service.MessageHandlingService;
+import org.mskcc.smile.service.RequestReplyHandlingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = {"org.mskcc.cmo.messaging",
-        "org.mskcc.cmo.common.*", "org.mskcc.cmo.metadb.*"})
+        "org.mskcc.smile.commons.*", "org.mskcc.smile.*"})
 public class CmoLabelGeneratorApp implements CommandLineRunner {
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorApp.class);
 

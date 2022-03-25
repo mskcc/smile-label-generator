@@ -1,4 +1,4 @@
-package org.mskcc.cmo.metadb;
+package org.mskcc.smile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -9,10 +9,10 @@ import java.util.Map;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mskcc.cmo.metadb.config.TestConfiguration;
-import org.mskcc.cmo.metadb.model.MockJsonTestData;
-import org.mskcc.cmo.metadb.model.SampleMetadata;
-import org.mskcc.cmo.metadb.service.CmoLabelGeneratorService;
+import org.mskcc.smile.config.TestConfiguration;
+import org.mskcc.smile.model.MockJsonTestData;
+import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
@@ -20,7 +20,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @ContextConfiguration(classes = TestConfiguration.class)
 @RunWith(SpringJUnit4ClassRunner.class)
-@ComponentScan("org.mskcc.cmo.metadb.service")
+@ComponentScan("org.mskcc.smile.service")
 public class CmoLabelGeneratorServiceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 

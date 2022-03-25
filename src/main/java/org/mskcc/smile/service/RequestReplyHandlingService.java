@@ -1,4 +1,4 @@
-package org.mskcc.cmo.metadb.service;
+package org.mskcc.smile.service;
 
 import org.mskcc.cmo.messaging.Gateway;
 

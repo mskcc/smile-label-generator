@@ -19,7 +19,7 @@ nats.store_password=
 igo.new_request_topic=
 igo.cmo_label_generator_topic=
 igo.cmo_sample_label_update_topic=
-metadb.sample_update_topic=
+smile.sample_update_topic=
 
 # request-reply topics
 request_reply.patient_samples_topic=
@@ -29,7 +29,7 @@ request_reply.cmo_label_generator_topic=
 num.new_request_handler_threads=
 
 # publishing failures filepath
-metadb.publishing_failures_filepath=
+smile.publishing_failures_filepath=
 
 # detailed consistency checking logger filepath
 cmo_label_generator.request_logger_filepath=
