@@ -165,6 +165,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             // TODO resolve any issues that arise with errors in generating cmo label
                             String sampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                                     requestId, sample, existingSamples);
+                            if (sampleCmoLabel == null) {
+                                LOG.error("Unable to generate CMO sample label for sample: "
+                                        + sample.getIgoId());
+                                continue;
+                            }
 
                             // check if matching sample found and determine if label actually needs updating
                             // or if we can use the same label that is already persisted for this sample
@@ -206,7 +211,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             LOG.error("Input sample size does not match the number of samples for which "
                                     + "a CMO label was successfully generated - logging request status");
                             requestStatusLogger.logRequestStatus(requestJson,
-                                    RequestStatusLogger.StatusType.REQUEST_WITH_FAILED_CMO_LABEL_GENERATION);
+                                    RequestStatusLogger.StatusType.REQ_SAMPLE_FAILED_LABEL_GENERATION);
                         }
 
                         // update contents of 'samples' in request json map to publish

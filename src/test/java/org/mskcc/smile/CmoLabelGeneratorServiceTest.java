@@ -56,8 +56,8 @@ public class CmoLabelGeneratorServiceTest {
      *  Expected behavior: Should return a label with
      *      incremented sample count and new Sample Type Abbreviation
      * @throws JsonProcessingException
-     * @throws CloneNotSupportedException 
-     * @throws IllegalArgumentException 
+     * @throws CloneNotSupportedException
+     * @throws IllegalArgumentException
      */
     @Test
     public void testCmoLabelGenForSampleUpdate() throws JsonProcessingException,
@@ -94,8 +94,8 @@ public class CmoLabelGeneratorServiceTest {
      *     incremented sample count and new cmoPatientId
      * @throws JsonProcessingException
      * @throws JsonMappingException
-     * @throws CloneNotSupportedException 
-     * @throws IllegalArgumentException 
+     * @throws CloneNotSupportedException
+     * @throws IllegalArgumentException
      */
     @Test
     public void testCmoLabelGenForSampleWithPatientCorrection()
@@ -126,7 +126,6 @@ public class CmoLabelGeneratorServiceTest {
 
         // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X003-d02", newCmoLabel);
-
     }
 
     /**
@@ -136,8 +135,8 @@ public class CmoLabelGeneratorServiceTest {
      *     only a new cmoPatientId change
      * @throws JsonProcessingException
      * @throws JsonMappingException
-     * @throws CloneNotSupportedException 
-     * @throws IllegalArgumentException 
+     * @throws CloneNotSupportedException
+     * @throws IllegalArgumentException
      */
     @Test
     public void testCmoLabelGenForExistingSampleWithPatientCorrection()
@@ -167,5 +166,45 @@ public class CmoLabelGeneratorServiceTest {
 
         // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X001-d02", newCmoLabel);
+    }
+
+    /**
+     * Tests that label generation fails as expected for sample with the following:
+     * - sample type (cmo sample class) = other
+     * - sample origin = whole blood
+     * - sample class (specimen type) = other
+     * Expected behavior: Should return null label.
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
+     * @throws CloneNotSupportedException
+     * @throws IllegalArgumentException
+     */
+    @Test
+    public void testCmoLabelGenForSampleWithOtherSpecimenType()
+            throws JsonMappingException, JsonProcessingException,
+            IllegalArgumentException, CloneNotSupportedException {
+        MockJsonTestData requestJson = mockedRequestJsonDataMap
+                .get("mockPublishedRequest1JsonDataWith2T2N");
+        // Parse requestMap and sampleList from mockPublishedRequest1JsonDataWith2T2N json
+        Map<String, String> mappedRequestJson = mapper.readValue(
+                requestJson.getJsonString(), Map.class);
+        SampleMetadata[] samples = mapper.convertValue(mappedRequestJson.get("samples"),
+                SampleMetadata[].class);
+
+        // existing sample for patientId: C-MP789JR
+        List<SampleMetadata> existingSamples = new ArrayList<>();
+
+        // updated SampleMetadata
+        SampleMetadata updatedSample = mapper.convertValue(
+                samples[0].clone(), SampleMetadata.class);
+        updatedSample.setSampleType("Other");
+        updatedSample.setSampleOrigin("Whole Blood");
+        updatedSample.setSampleClass("Other");
+
+        // generate cmoLabel for sample with spec type (sample type) = other
+        // should return null string
+        String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
+                updatedSample, existingSamples);
+        Assert.assertNull(newCmoLabel);
     }
 }

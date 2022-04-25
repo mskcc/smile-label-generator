@@ -153,8 +153,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // resolve sample type abbreviation
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleManifest);
         if (sampleTypeAbbreviation == null) {
-            throw new RuntimeException("Could not resolve sample type abbreviation from specimen type,"
+            LOG.error("Could not resolve sample type abbreviation from specimen type,"
                     + " sample origin, or sample class: " + sampleManifest.toString());
+            return null;
         }
 
         // resolve the sample counter value to use for the cmo label
@@ -165,8 +166,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // resolve nucleic acid abbreviation
         String nucleicAcidAbbreviation = resolveNucleicAcidAbbreviation(sampleManifest);
         if (nucleicAcidAbbreviation == null) {
-            throw new RuntimeException("Could not resolve nucleic acid abbreviation from sample "
+            LOG.error("Could not resolve nucleic acid abbreviation from sample "
                     + "type or naToExtract: " + sampleManifest.toString());
+            return null;
         }
         // get next increment for nucleic acid abbreviation
         Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
@@ -192,9 +194,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
                 sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType());
         if (sampleTypeAbbreviation == null) {
-            throw new RuntimeException("Could not resolve sample type abbreviation "
+            LOG.error("Could not resolve sample type abbreviation "
                     + "from specimen type ('sampleClass'), sample origin, or sample "
                     + "class ('sampleType'): " + sampleMetadata.toString());
+            return null;
         }
 
         // resolve the sample counter value to use for the cmo label
@@ -209,8 +212,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         String nucleicAcidAbbreviation =
                 resolveNucleicAcidAbbreviation(sampleTypeString, recipe, naToExtract);
         if (nucleicAcidAbbreviation == null) {
-            throw new RuntimeException("Could not resolve nucleic acid abbreviation from sample "
+            LOG.error("Could not resolve nucleic acid abbreviation from sample "
                     + "type or naToExtract: " + sampleMetadata.toString());
+            return null;
         }
         // get next increment for nucleic acid abbreviation
         Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
