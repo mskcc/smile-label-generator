@@ -17,7 +17,9 @@ nats.store_password=
 
 # pub-sub topics
 igo.new_request_topic=
+igo.promoted_request_topic=
 igo.cmo_label_generator_topic=
+igo.cmo_promoted_label_toic=
 igo.cmo_sample_label_update_topic=
 smile.sample_update_topic=
 
@@ -27,6 +29,7 @@ request_reply.cmo_label_generator_topic=
 
 # threading
 num.new_request_handler_threads=
+num.promoted_request_handler_threads=
 
 # publishing failures filepath
 smile.publishing_failures_filepath=
