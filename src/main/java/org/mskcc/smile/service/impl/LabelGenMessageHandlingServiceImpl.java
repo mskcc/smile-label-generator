@@ -39,8 +39,14 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     @Value("${igo.cmo_label_generator_topic}")
     private String CMO_LABEL_GENERATOR_TOPIC;
 
+    @Value("${igo.cmo_promoted_label_topic}")
+    private String CMO_PROMOTED_LABEL_TOPIC;
+
     @Value("${igo.new_request_topic}")
     private String IGO_NEW_REQUEST_TOPIC;
+
+    @Value("${igo.promoted_request_topic}")
+    private String IGO_PROMOTED_REQUEST_TOPIC;
 
     @Value("${igo.cmo_sample_label_update_topic}")
     private String CMO_LABEL_UPDATE_TOPIC;
@@ -50,6 +56,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
 
     @Value("${num.new_request_handler_threads}")
     private int NUM_NEW_REQUEST_HANDLERS;
+
+    @Value("${num.promoted_request_handler_threads}")
+    private int NUM_PROMOTED_REQUEST_HANDLERS;
 
     @Value("${request_reply.patient_samples_topic}")
     private String PATIENT_SAMPLES_REQUEST_TOPIC;
@@ -66,30 +75,47 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     private static final ExecutorService exec = Executors.newCachedThreadPool();
     private static final BlockingQueue<String> cmoLabelGeneratorQueue =
         new LinkedBlockingQueue<String>();
-    private static final BlockingQueue<String> igoNewRequestPublisherQueue =
-            new LinkedBlockingQueue<String>();
+    private static final BlockingQueue<String> cmoPromotedLabelQueue =
+        new LinkedBlockingQueue<String>();
+    private static final BlockingQueue<String> igoNewRequestQueue =
+        new LinkedBlockingQueue<String>();
+    private static final BlockingQueue<String> igoPromotedRequestQueue =
+        new LinkedBlockingQueue<String>();
     private static final BlockingQueue<SampleMetadata> cmoSampleLabelUpdateQueue =
-            new LinkedBlockingQueue<SampleMetadata>();
+        new LinkedBlockingQueue<SampleMetadata>();
     private static CountDownLatch cmoLabelGeneratorShutdownLatch;
+    private static CountDownLatch cmoPromotedLabelShutdownLatch;
     private static CountDownLatch newRequestPublisherShutdownLatch;
+    private static CountDownLatch promotedRequestPublisherShutdownLatch;
     private static CountDownLatch cmoSampleLabelUpdateShutdownLatch;
     private static Gateway messagingGateway;
 
     private static final Log LOG = LogFactory.getLog(LabelGenMessageHandlingServiceImpl.class);
 
+    public static enum IgoRequestDest {
+        NEW_REQUEST_DEST,
+        PROMOTED_REQUEST_DEST
+    }
+
     /**
-     * Message handler for publishing requests to IGO_NEW_REQUEST topic.
+     * Message handler for new requests and promoted requests.
      */
-    private class IgoNewRequestPublisherHandler implements Runnable {
+    private class IgoRequestHandler implements Runnable {
         final Phaser phaser;
+        final IgoRequestDest igoRequestDest;
+        final BlockingQueue<String> igoRequestQueue;
+        final CountDownLatch shutdownLatch;
         boolean interrupted = false;
 
         /**
-         * IgoNewRequestPublisherHandler constructor.
-         * @param phaser
+         * IgoRequestPublisherHandler constructor.
          */
-        IgoNewRequestPublisherHandler(Phaser phaser) {
+        IgoRequestHandler(Phaser phaser, IgoRequestDest igoRequestDest,
+                BlockingQueue<String> igoRequestQueue, CountDownLatch shutdownLatch) {
             this.phaser = phaser;
+            this.igoRequestDest = igoRequestDest;
+            this.igoRequestQueue = igoRequestQueue;
+            this.shutdownLatch = shutdownLatch;
         }
 
         @Override
@@ -97,48 +123,66 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             phaser.arrive();
             while (true) {
                 try {
-                    String requestJson = igoNewRequestPublisherQueue.poll(100, TimeUnit.MILLISECONDS);
+                    String requestJson = igoRequestQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (requestJson != null) {
                         try {
-                            // publish to igo new request topic
-                            LOG.info("Publishing request to: " + IGO_NEW_REQUEST_TOPIC);
-                            messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
-                                        IGO_NEW_REQUEST_TOPIC,
-                                        requestJson);
+                            switch (igoRequestDest) {
+                                case NEW_REQUEST_DEST:
+                                    LOG.info("Publishing request to: " + IGO_NEW_REQUEST_TOPIC);
+                                    messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
+                                            IGO_NEW_REQUEST_TOPIC,
+                                            requestJson);
+                                    break;
+                                case PROMOTED_REQUEST_DEST:
+                                    LOG.info("Publishing request to: " + IGO_PROMOTED_REQUEST_TOPIC);
+                                    messagingGateway.publish(getRequestIdFromRequestJson(requestJson),
+                                            IGO_PROMOTED_REQUEST_TOPIC,
+                                            requestJson);
+                                    break;
+                                default:
+                                    break;
+                            }
                         } catch (Exception e) {
-                            LOG.error("Error occurred during attempt to publish on topic: "
-                                    + IGO_NEW_REQUEST_TOPIC, e);
+                            LOG.error("Error occurred during attempt to publish request "
+                                    + "to destination topic", e);
                         }
                     }
-                    if (interrupted && igoNewRequestPublisherQueue.isEmpty()) {
+                    if (interrupted && igoRequestQueue.isEmpty()) {
                         break;
                     }
                 } catch (InterruptedException e) {
                     interrupted = true;
                 } catch (Exception e) {
-                    LOG.error("Error during handling of igo new request publishing queue", e);
+                    LOG.error("Error during handling of igo request publishing queue", e);
                 }
             }
-            newRequestPublisherShutdownLatch.countDown();
+            shutdownLatch.countDown();
         }
     }
 
     /**
      * Message handler for generating CMO labels for samples in requests.
      * Updates the request json contents with the generated label sample metadata
-     * and adds message to a separate queue which will publish to IGO_NEW_REQUEST.
+     * and adds message to a separate queue which will publish to IGO_NEW_REQUEST or
+     * IGO_PROMOTED_REQUEST.
      */
     private class CmoLabelGeneratorHandler implements Runnable {
 
         final Phaser phaser;
+        final IgoRequestDest igoRequestDest;
+        final BlockingQueue<String> labelGeneratorQueue;
+        final CountDownLatch shutdownLatch;
         boolean interrupted = false;
 
         /**
          * CmoLabelGeneratorHandler constructor.
-         * @param phaser
          */
-        CmoLabelGeneratorHandler(Phaser phaser) {
+        CmoLabelGeneratorHandler(Phaser phaser, IgoRequestDest igoRequestDest,
+                BlockingQueue<String> labelGeneratorQueue, CountDownLatch shutdownLatch) {
             this.phaser = phaser;
+            this.igoRequestDest = igoRequestDest;
+            this.labelGeneratorQueue = labelGeneratorQueue;
+            this.shutdownLatch = shutdownLatch;
         }
 
         @Override
@@ -146,7 +190,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             phaser.arrive();
             while (true) {
                 try {
-                    String requestJson = cmoLabelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
+                    String requestJson = labelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (requestJson != null) {
                         LOG.info("Extracting samples from request received...");
                         String requestId = getRequestIdFromRequestJson(requestJson);
@@ -163,9 +207,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                     patientSamplesMap.getOrDefault(sample.getCmoPatientId(),
                                             new ArrayList<>());
                             // TODO resolve any issues that arise with errors in generating cmo label
-                            String sampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
+                            String newSampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                                     requestId, sample, existingSamples);
-                            if (sampleCmoLabel == null) {
+                            if (newSampleCmoLabel == null) {
                                 LOG.error("Unable to generate CMO sample label for sample: "
                                         + sample.getIgoId());
                                 continue;
@@ -176,27 +220,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC since
                             // there might be other metadata changes that need to be persisted that may not
                             // necessarily affect the cmo label generated
-                            SampleMetadata matchingSample = null;
-                            for (SampleMetadata s : existingSamples) {
-                                if (s.getPrimaryId().equalsIgnoreCase(sample.getIgoId())) {
-                                    matchingSample = s;
-                                    LOG.info("Sample with matching IGO ID found in existing samples - "
-                                            + "comparing metadata used for generating cmo label");
-                                    break;
-                                }
-                            }
-
-                            if (matchingSample != null
-                                    && !cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
-                                            sampleCmoLabel, matchingSample.getCmoSampleName())) {
-                                LOG.info("No change detected for CMO sample label metadata - using "
-                                        + "existing CMO label for matching IGO sample from database.");
-                                sample.setCmoSampleName(matchingSample.getCmoSampleName());
-                            } else {
-                                LOG.info("Changes detected in CMO sample label metadata - "
-                                        + "updating sample CMO label to newly generated label.");
-                                sample.setCmoSampleName(sampleCmoLabel);
-                            }
+                            String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(sample.getIgoId(),
+                                    existingSamples, newSampleCmoLabel);
+                            sample.setCmoSampleName(resolvedCmoSampleLabel);
 
                             // update patient sample map and list of updated samples for request
                             updatedSamples.add(sample);
@@ -219,9 +245,18 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
                         requestJsonMap.put("samples",
                                 updatedSamples);
-                        igoNewRequestPublisherQueue.add(mapper.writeValueAsString(requestJsonMap));
+                        switch (igoRequestDest) {
+                            case NEW_REQUEST_DEST:
+                                igoNewRequestQueue.add(mapper.writeValueAsString(requestJsonMap));
+                                break;
+                            case PROMOTED_REQUEST_DEST:
+                                igoPromotedRequestQueue.add(mapper.writeValueAsString(requestJsonMap));
+                                break;
+                            default:
+                                break;
+                        }
                     }
-                    if (interrupted && cmoLabelGeneratorQueue.isEmpty()) {
+                    if (interrupted && labelGeneratorQueue.isEmpty()) {
                         break;
                     }
                 } catch (InterruptedException e) {
@@ -230,7 +265,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                     LOG.error("Error during request handling", e);
                 }
             }
-            cmoLabelGeneratorShutdownLatch.countDown();
+            shutdownLatch.countDown();
         }
     }
 
@@ -263,7 +298,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                 getExistingPatientSamples(sample.getCmoPatientId());
 
                         // generate new cmo sample label and update sample metadata object
-                        String updatedCmoSampleLabel =
+                        String newCmoSampleLabel =
                                 cmoLabelGeneratorService.generateCmoSampleLabel(sample, existingSamples);
 
                         // check if matching sample found and determine if label actually needs updating
@@ -271,24 +306,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC since
                         // there might be other metadata changes that need to be persisted that may not
                         // necessarily affect the cmo label generated
-                        SampleMetadata matchingSample = null;
-                        for (SampleMetadata s : existingSamples) {
-                            if (s.getPrimaryId().equalsIgnoreCase(sample.getPrimaryId())) {
-                                matchingSample = s;
-                                break;
-                            }
-                        }
-
-                        if (matchingSample != null && !cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
-                                        updatedCmoSampleLabel, matchingSample.getCmoSampleName())) {
-                            LOG.info("No change detected for CMO sample label metadata - using "
-                                    + "existing CMO label for matching IGO sample from database.");
-                            sample.setCmoSampleName(matchingSample.getCmoSampleName());
-                        } else {
-                            LOG.info("Changes detected in CMO sample label metadata - "
-                                    + "updating sample CMO label to newly generated label.");
-                            sample.setCmoSampleName(updatedCmoSampleLabel);
-                        }
+                        String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(sample.getPrimaryId(),
+                                existingSamples, newCmoSampleLabel);
+                        sample.setCmoSampleName(resolvedCmoSampleLabel);
                         LOG.info("Publishing sample to IGO_SAMPLE_UPDATE_TOPIC");
                         messagingGateway.publish(IGO_SAMPLE_UPDATE_TOPIC, mapper.writeValueAsString(sample));
                     }
@@ -302,6 +322,32 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 }
             }
             cmoSampleLabelUpdateShutdownLatch.countDown();
+        }
+    }
+
+    private String resolveAndUpdateCmoSampleLabel(String samplePrimaryId,
+            List<SampleMetadata> existingSamples, String newCmoSampleLabel) {
+        // check for matching sample in existing samples list and determine if label
+        // actually needs updating or if we can use the same label that is alredy
+        // persisted for this sample
+        SampleMetadata matchingSample = null;
+        for (SampleMetadata s : existingSamples) {
+            if (s.getPrimaryId().equalsIgnoreCase(samplePrimaryId)) {
+                matchingSample = s;
+                break;
+            }
+        }
+        // if sample does not require a label update then use the existing label from the
+        // matching sample identified if applicable - otherwise use the new label generated
+        if (matchingSample != null && !cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                        newCmoSampleLabel, matchingSample.getCmoSampleName())) {
+            LOG.info("No change detected for CMO sample label metadata - using "
+                    + "existing CMO label for matching IGO sample from database.");
+            return matchingSample.getCmoSampleName();
+        } else {
+            LOG.info("Changes detected in CMO sample label metadata - "
+                    + "updating sample CMO label to newly generated label.");
+            return newCmoSampleLabel;
         }
     }
 
@@ -365,6 +411,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         if (!initialized) {
             messagingGateway = gateway;
             setupCmoLabelGeneratorHandler(messagingGateway, this);
+            setupCmoPromotedLabelHandler(messagingGateway, this);
             setupCmoSampleLabelUpdateHandler(messagingGateway, this);
             initializeMessageHandlers();
             initialized = true;
@@ -380,6 +427,19 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         }
         if (!shutdownInitiated) {
             cmoLabelGeneratorQueue.put(requestJson);
+        } else {
+            LOG.error("Shutdown initiated, not accepting request: " + requestJson);
+            throw new IllegalStateException("Shutdown initiated, not handling any more requests");
+        }
+    }
+
+    @Override
+    public void cmoPromotedLabelHandler(String requestJson) throws Exception {
+        if (!initialized) {
+            throw new IllegalStateException("Message Handling Service has not been initialized");
+        }
+        if (!shutdownInitiated) {
+            cmoPromotedLabelQueue.put(requestJson);
         } else {
             LOG.error("Shutdown initiated, not accepting request: " + requestJson);
             throw new IllegalStateException("Shutdown initiated, not handling any more requests");
@@ -407,7 +467,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         }
         exec.shutdownNow();
         cmoLabelGeneratorShutdownLatch.await();
+        cmoPromotedLabelShutdownLatch.await();
         newRequestPublisherShutdownLatch.await();
+        promotedRequestPublisherShutdownLatch.await();
         shutdownInitiated = true;
     }
 
@@ -417,18 +479,42 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         cmoLabelGeneratorPhaser.register();
         for (int lc = 0; lc < NUM_NEW_REQUEST_HANDLERS; lc++) {
             cmoLabelGeneratorPhaser.register();
-            exec.execute(new CmoLabelGeneratorHandler(cmoLabelGeneratorPhaser));
+            exec.execute(new CmoLabelGeneratorHandler(cmoLabelGeneratorPhaser,
+                    IgoRequestDest.NEW_REQUEST_DEST, cmoLabelGeneratorQueue,
+                    cmoLabelGeneratorShutdownLatch));
         }
         cmoLabelGeneratorPhaser.arriveAndAwaitAdvance();
+
+        cmoPromotedLabelShutdownLatch = new CountDownLatch(NUM_NEW_REQUEST_HANDLERS);
+        final Phaser cmoPromotedLabelPhaser = new Phaser();
+        cmoPromotedLabelPhaser.register();
+        for (int lc = 0; lc < NUM_PROMOTED_REQUEST_HANDLERS; lc++) {
+            cmoPromotedLabelPhaser.register();
+            exec.execute(new CmoLabelGeneratorHandler(cmoPromotedLabelPhaser,
+                    IgoRequestDest.PROMOTED_REQUEST_DEST, cmoPromotedLabelQueue,
+                    cmoPromotedLabelShutdownLatch));
+        }
+        cmoPromotedLabelPhaser.arriveAndAwaitAdvance();
 
         newRequestPublisherShutdownLatch = new CountDownLatch(NUM_NEW_REQUEST_HANDLERS);
         final Phaser newRequestPhaser = new Phaser();
         newRequestPhaser.register();
         for (int lc = 0; lc < NUM_NEW_REQUEST_HANDLERS; lc++) {
             newRequestPhaser.register();
-            exec.execute(new IgoNewRequestPublisherHandler(newRequestPhaser));
+            exec.execute(new IgoRequestHandler(newRequestPhaser, IgoRequestDest.NEW_REQUEST_DEST,
+                    igoNewRequestQueue, newRequestPublisherShutdownLatch));
         }
         newRequestPhaser.arriveAndAwaitAdvance();
+
+        promotedRequestPublisherShutdownLatch = new CountDownLatch(NUM_PROMOTED_REQUEST_HANDLERS);
+        final Phaser promotedRequestPhaser = new Phaser();
+        promotedRequestPhaser.register();
+        for (int lc = 0; lc < NUM_PROMOTED_REQUEST_HANDLERS; lc++) {
+            promotedRequestPhaser.register();
+            exec.execute(new IgoRequestHandler(promotedRequestPhaser, IgoRequestDest.PROMOTED_REQUEST_DEST,
+                    igoPromotedRequestQueue, promotedRequestPublisherShutdownLatch));
+        }
+        promotedRequestPhaser.arriveAndAwaitAdvance();
 
         cmoSampleLabelUpdateShutdownLatch = new CountDownLatch(NUM_NEW_REQUEST_HANDLERS);
         final Phaser cmoSampleLabelUpdatePhaser = new Phaser();
@@ -447,6 +533,22 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 LOG.info("Received message on topic: " + CMO_LABEL_GENERATOR_TOPIC);
                 try {
                     messageHandlingService.cmoLabelGeneratorHandler(
+                            mapper.readValue(new String(msg.getData(), StandardCharsets.UTF_8),
+                                    String.class));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    private void setupCmoPromotedLabelHandler(Gateway gateway,
+            MessageHandlingService messageHandlingService) throws Exception {
+        gateway.subscribe(CMO_PROMOTED_LABEL_TOPIC, Object.class, new MessageConsumer() {
+            public void onMessage(Message msg, Object message) {
+                LOG.info("Received message on topic: " + CMO_PROMOTED_LABEL_TOPIC);
+                try {
+                    messageHandlingService.cmoPromotedLabelHandler(
                             mapper.readValue(new String(msg.getData(), StandardCharsets.UTF_8),
                                     String.class));
                 } catch (Exception e) {
