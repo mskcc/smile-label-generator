@@ -1,6 +1,6 @@
 {
   "requestId": "MOCKREQUEST1_B",
-  "recipe": "GENESET101_BAITS",
+  "recipe": "GENESET101",
   "projectManagerName": "Bar, Foo",
   "piEmail": "request1pi@mskcc.org",
   "labHeadName": "Foo Bar",
@@ -43,10 +43,7 @@
               "flowCellLanes": [
                 5
               ],
-              "fastqs": [
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_XXX002_P3_12345_L1_IGO_MOCKREQUEST1_B_1/XXX002_P3_12345_L1_IGO_MOCKREQUEST1_B_1_S82_R1_001.fastq.gz",
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_XXX002_P3_12345_L1_IGO_MOCKREQUEST1_B_1/XXX002_P3_12345_L1_IGO_MOCKREQUEST1_B_1_S82_R2_001.fastq.gz"
-              ]
+              "fastqs": []
             }
           ]
         }
@@ -64,10 +61,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "PDX"
       }
     },
     {
@@ -88,22 +85,7 @@
           "captureConcentrationNm": "5.074626865671642",
           "captureInputNg": "170.0",
           "captureName": "Pool-MOCKREQUEST1_B-Tube7_1",
-          "runs": [
-            {
-              "runMode": "HiSeq High Output",
-              "runId": "RUNID_0123",
-              "flowCellId": "X5KL2KKAY",
-              "readLength": "",
-              "runDate": "2018-06-05",
-              "flowCellLanes": [
-                5
-              ],
-              "fastqs": [
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_01-0012345a_IGO_MOCKREQUEST1_B_2/01-0012345a_IGO_MOCKREQUEST1_B_2_S83_R2_001.fastq.gz",
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_01-0012345a_IGO_MOCKREQUEST1_B_2/01-0012345a_IGO_MOCKREQUEST1_B_2_S83_R1_001.fastq.gz"
-              ]
-            }
-          ]
+          "runs": []
         }
       ],
       "cmoPatientId": "C-MP789JR",
@@ -119,10 +101,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "Blood"
       }
     },
     {
@@ -152,10 +134,6 @@
               "runDate": "2018-06-05",
               "flowCellLanes": [
                 5
-              ],
-              "fastqs": [
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_XXX002_P1_12348a_R_43_IGO_MOCKREQUEST1_B_3/XXX002_P1_12348a_R_43_IGO_MOCKREQUEST1_B_3_S84_R1_001.fastq.gz",
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_XXX002_P1_12348a_R_43_IGO_MOCKREQUEST1_B_3/XXX002_P1_12348a_R_43_IGO_MOCKREQUEST1_B_3_S84_R2_001.fastq.gz"
               ]
             }
           ]
@@ -174,10 +152,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "PDX"
       }
     },
     {
@@ -208,10 +186,7 @@
               "flowCellLanes": [
                 5
               ],
-              "fastqs": [
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_01-XXXXXXXa_IGO_MOCKREQUEST1_B_4/01-XXXXXXXa_IGO_MOCKREQUEST1_B_4_S85_R1_001.fastq.gz",
-                "/FASTQ/Project_MOCKREQUEST1_B/Sample_01-XXXXXXXa_IGO_MOCKREQUEST1_B_4/01-XXXXXXXa_IGO_MOCKREQUEST1_B_4_S85_R2_001.fastq.gz"
-              ]
+              "fastqs": []
             }
           ]
         }
@@ -229,10 +204,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "Blood"
       }
     }
   ],

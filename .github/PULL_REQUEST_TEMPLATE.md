@@ -26,7 +26,6 @@ Include specific tasks in the order they need to be done in. Include links to sp
 - [ ] task 3
 
 ---
-
 ## Crossing T's and dotting I's
 
 Please follow these checklists to help prevent any unexpected issues from being introduced by the changes in this pull request. If an item does not apply then indicate so by surrounding the line item with `~~` to strikethrough the text. See [basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax) for more information.
@@ -40,6 +39,7 @@ Updates were made to the mocked incoming request data and/or mocked published re
 - [ ] [smile-server test data](https://github.com/mskcc/smile-server/tree/master/service/src/test/resources/data)
 - [ ] [smile-commons test data](https://github.com/mskcc/smile-commons/tree/master/src/test/resources/data)
 - [ ] [smile-label-generator test data](https://github.com/mskcc/smile-label-generator/tree/master/src/test/resources/data)
+- [ ] [smile-request-filter test data](https://github.com/mskcc/smile-request-filter/tree/master/src/test/resources/data)
 
 **Code checks:**
 - [ ] Unit tests were updated in relation to updates to the mocked test data.

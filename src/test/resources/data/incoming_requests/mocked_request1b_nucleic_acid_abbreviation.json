@@ -1,6 +1,6 @@
 {
   "requestId": "MOCKREQUEST1_B",
-  "recipe": "GENESET101_BAITS",
+  "recipe": "GENESET101",
   "projectManagerName": "Bar, Foo",
   "piEmail": "request1pi@mskcc.org",
   "labHeadName": "Foo Bar",
@@ -64,10 +64,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "PDX"
       }
     },
     {
@@ -119,10 +119,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "Blood"
       }
     },
     {
@@ -174,10 +174,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "PDX"
       }
     },
     {
@@ -229,10 +229,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "GENESET101_BAITS",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "Blood"
       }
     }
   ],
