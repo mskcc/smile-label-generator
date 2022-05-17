@@ -1,6 +1,6 @@
 {
   "requestId": "MOCKREQUEST1_B",
-  "recipe": "GENESET101_BAITS",
+  "recipe": "GENESET101",
   "projectManagerName": "Bar, Foo",
   "piEmail": "request1pi@mskcc.org",
   "labHeadName": "Foo Bar",
@@ -61,13 +61,13 @@
       "specimenType": "PDX",
       "sampleOrigin": "Tissue",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": "null",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "null",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "PDX"
       }
     },
     {
@@ -116,13 +116,13 @@
       "specimenType": "Blood",
       "sampleOrigin": "Whole Blood",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": "null",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "null",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "Blood"
       }
     },
     {
@@ -171,13 +171,13 @@
       "specimenType": "PDX",
       "sampleOrigin": "Tissue",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": "null",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "null",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "PDX"
       }
     },
     {
@@ -226,13 +226,13 @@
       "specimenType": "Blood",
       "sampleOrigin": "Whole Blood",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": "null",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "null",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "Blood"
       }
     }
   ],

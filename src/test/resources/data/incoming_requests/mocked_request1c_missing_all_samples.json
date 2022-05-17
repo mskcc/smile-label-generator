@@ -1,6 +1,6 @@
 {
   "requestId": "MOCKREQUEST1_B",
-  "recipe": "GENESET101_BAITS",
+  "recipe": "GENESET101",
   "projectManagerName": "Bar, Foo",
   "piEmail": "request1pi@mskcc.org",
   "labHeadName": "Foo Bar",
@@ -57,23 +57,23 @@
       "species": "Human",
       "sex": "F",
       "tumorOrNormal": "Tumor",
-      "preservation": "Frozen",
-      "specimenType": "PDX",
-      "sampleOrigin": "Tissue",
+      "preservation": "wrongValue",
+      "specimenType": "wrongValue",
+      "sampleOrigin": "wrongValue",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": null,
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "wrongValue",
+        "recipe": null,
+        "normalizedPatientId": "wrongValue",
+        "sampleType": "wrongValue"
       }
     },
     {
       "cmoSampleName": "C-MP789JR-N001-d",
       "sampleName": "01-0012345a",
-      "cmoSampleClass": "Normal",
+      "cmoSampleClass": "wrongValue",
       "oncoTreeCode": "CLL",
       "collectionYear": "",
       "tubeId": "",
@@ -112,17 +112,17 @@
       "species": "Human",
       "sex": "F",
       "tumorOrNormal": "Normal",
-      "preservation": "Frozen",
-      "specimenType": "Blood",
-      "sampleOrigin": "Whole Blood",
+      "preservation": "wrongValue",
+      "specimenType": "wrongValue",
+      "sampleOrigin": "wrongValue",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": null,
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "wrongValue",
+        "recipe": null,
+        "normalizedPatientId": "wrongValue",
+        "sampleType": "wrongValue"
       }
     },
     {
@@ -168,16 +168,16 @@
       "sex": "M",
       "tumorOrNormal": "Tumor",
       "preservation": "Frozen",
-      "specimenType": "PDX",
+      "specimenType": "wrongValue",
       "sampleOrigin": "Tissue",
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": "",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Tissue",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "testingNaToExtractvalue",
+        "recipe": "",
+        "normalizedPatientId": "testingNormalizedPatientIdvalue",
+        "sampleType": "wrongValue"
       }
     },
     {
@@ -222,17 +222,17 @@
       "species": "Human",
       "sex": "M",
       "tumorOrNormal": "Normal",
-      "preservation": "Frozen",
-      "specimenType": "Blood",
-      "sampleOrigin": "Whole Blood",
+      "preservation": null,
+      "specimenType": null,
+      "sampleOrigin": null,
       "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
+      "baitSet": "",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "",
-        "sampleType": "Whole Blood",
-        "normalizedPatientId": "MRN_REDACTED",
-        "recipe": "GENESET101_BAITS"
+        "naToExtract": "wrongValue",
+        "sampleType": null,
+        "normalizedPatientId": "wrongValue",
+        "recipe": ""
       }
     }
   ],
