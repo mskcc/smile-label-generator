@@ -4,14 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mskcc.smile.commons.enums.NucleicAcid;
+import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.config.TestConfiguration;
 import org.mskcc.smile.model.MockJsonTestData;
 import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
@@ -25,7 +29,7 @@ public class CmoLabelGeneratorServiceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
-    CmoLabelGeneratorService cmoLabelGeneratorService;
+    private CmoLabelGeneratorService cmoLabelGeneratorService;
 
     @Autowired
     private Map<String, MockJsonTestData> mockedRequestJsonDataMap;
@@ -206,5 +210,57 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
         Assert.assertNull(newCmoLabel);
+    }
+
+    @Test
+    public void testCmoCelllineLabelGenerationUpdates() {
+        String requestId = "86793_T";
+        List<SampleMetadata> existingSamples = new ArrayList<>();
+
+        // generate reference cell line sample label and assert it matches the expected value
+        IgoSampleManifest sample = getSampleMetadata("86793_T_4", "C-76767",
+                SpecimenType.CELLLINE, NucleicAcid.DNA, "AMP1");
+        String sampleLabel =  cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
+                sample, existingSamples);
+        String sampleExpectedLabel = "AMP1-86793T";
+        Assert.assertEquals("AMP1-86793T", sampleLabel);
+
+        // test label generated with new investigator id and assert
+        // that the sample would require a label update
+        IgoSampleManifest sampleUpdatedInvestigatorId = getSampleMetadata("86793_T_4", "C-76767",
+                SpecimenType.CELLLINE, NucleicAcid.DNA, "MIP2");
+        String sampleUpdatedInvestigatorIdLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
+                sampleUpdatedInvestigatorId, existingSamples);
+        String expectedLabelWithInvestiagorIdUpdate = "MIP2-86793T";
+        Assert.assertEquals(expectedLabelWithInvestiagorIdUpdate, sampleUpdatedInvestigatorIdLabel);
+        // assert that the sample would require a label update
+        Assert.assertTrue(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                sampleUpdatedInvestigatorIdLabel, sampleLabel));
+
+        // test label generated with same investigator id as original sample
+        // but with a different nucleic acid value
+        IgoSampleManifest sampleUpdatedNaExtract = getSampleMetadata("86793_T_4", "C-76767",
+                SpecimenType.CELLLINE, NucleicAcid.CFDNA, "AMP1");
+        String sampleUpdatedNaExtractLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
+                sampleUpdatedNaExtract, existingSamples);
+        Assert.assertEquals(sampleExpectedLabel, sampleUpdatedNaExtractLabel);
+        Assert.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                sampleUpdatedNaExtractLabel, sampleExpectedLabel));
+    }
+
+    private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
+            SpecimenType specimenType, NucleicAcid naToExtract, String investigatorSampleId) {
+        IgoSampleManifest sample = new IgoSampleManifest();
+        sample.setIgoId(igoId);
+        sample.setCmoPatientId(cmoPatientId);
+        sample.setSpecimenType(specimenType.getValue());
+        sample.setInvestigatorSampleId(investigatorSampleId);
+        sample.setCmoSampleClass("Tumor");
+
+        Map<String, String> cmoSampleIdFields = new HashMap<>();
+        cmoSampleIdFields.put("naToExtract", naToExtract.getValue());
+        cmoSampleIdFields.put("normalizedPatientId", cmoPatientId);
+        sample.setCmoSampleIdFields(cmoSampleIdFields);
+        return sample;
     }
 }
