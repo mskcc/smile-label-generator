@@ -110,8 +110,21 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      */
     @Override
     public Boolean igoSampleRequiresLabelUpdate(String newCmoLabel, String existingCmoLabel) {
+        // if the labels match then just return false
+        if (newCmoLabel.equals(existingCmoLabel)) {
+            return Boolean.FALSE;
+        }
+        // proceed with regular (non-cell line) cmo sample label checking
+        Matcher matcherNewCelllineLabel = CMO_CELLLINE_ID_REGEX.matcher(newCmoLabel);
         Matcher matcherNewLabel = CMO_SAMPLE_ID_REGEX.matcher(newCmoLabel);
         Matcher matcherExistingLabel = CMO_SAMPLE_ID_REGEX.matcher(existingCmoLabel);
+
+        // if we have a cell line sample and the existing and new label generated do not match
+        // then return true so that we update to the new cmo label generated
+        if (matcherNewCelllineLabel.find() && !matcherNewLabel.find()) {
+            return Boolean.TRUE;
+        }
+
         if (!matcherNewLabel.find() || !matcherExistingLabel.find()) {
             throw new IllegalStateException("New CMO label and/or existing CMO label do not meet CMO ID "
                     + "regex requirements: new = " + newCmoLabel + ", existingLabel = " + existingCmoLabel);
