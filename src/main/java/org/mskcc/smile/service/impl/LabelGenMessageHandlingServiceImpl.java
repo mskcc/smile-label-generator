@@ -338,17 +338,31 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             }
         }
         // if sample does not require a label update then use the existing label from the
-        // matching sample identified if applicable - otherwise use the new label generated
-        if (matchingSample != null && !cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
-                        newCmoSampleLabel, matchingSample.getCmoSampleName())) {
-            LOG.info("No change detected for CMO sample label metadata - using "
-                    + "existing CMO label for matching IGO sample from database.");
-            return matchingSample.getCmoSampleName();
-        } else {
-            LOG.info("Changes detected in CMO sample label metadata - "
-                    + "updating sample CMO label to newly generated label.");
-            return newCmoSampleLabel;
+        // matching sample identified if applicable - otherwise use the newly generated label
+        Boolean updateRequired = Boolean.FALSE;
+        if (matchingSample != null) {
+            try {
+                updateRequired = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                        newCmoSampleLabel, matchingSample.getCmoSampleName());
+            } catch (IllegalStateException e) {
+                // note: special cases where we just want to keep the existing label even if it's not
+                // meeting the cmo id regex requirements only if the existing cmo sample name
+                // matches the existing investigator sample id
+                if (matchingSample.getCmoSampleName().equals(matchingSample.getInvestigatorSampleId())) {
+                    return matchingSample.getCmoSampleName();
+                } else {
+                    throw new IllegalStateException(e);
+                }
+            }
+            if (!updateRequired) {
+                LOG.info("No change detected for CMO sample label metadata - using "
+                        + "existing CMO label for matching IGO sample from database.");
+                return matchingSample.getCmoSampleName();
+            }
         }
+        LOG.info("Changes detected in CMO sample label metadata - "
+                    + "updating sample CMO label to newly generated label.");
+        return newCmoSampleLabel;
     }
 
     private List<SampleMetadata> updatePatientSampleList(List<SampleMetadata> existingSamples,
