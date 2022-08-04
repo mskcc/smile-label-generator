@@ -25,7 +25,6 @@ public class RequestStatusLogger {
 
     private File requestStatusLoggerFile;
 
-    @Autowired
     private static final String[] REQUEST_LOGGER_FILE_HEADER = new String[]{"DATE", "STATUS", "MESSAGE"};
 
     /**
