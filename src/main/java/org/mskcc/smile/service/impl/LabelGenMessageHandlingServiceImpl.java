@@ -16,6 +16,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
@@ -583,6 +585,12 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             String.class);
                     SampleMetadata sampleMetadata =
                             mapper.readValue(sampleMetadataJson, SampleMetadata.class);
+                    if (StringUtils.isEmpty(sampleMetadata.getIgoRequestId())) {
+                        String requestId = ObjectUtils.firstNonNull(
+                                sampleMetadata.getAdditionalProperties().get("requestId"),
+                                sampleMetadata.getAdditionalProperties().get("igoRequestId"));
+                        sampleMetadata.setIgoRequestId(requestId);
+                    }
                     messageHandlingService.cmoSampleLabelUpdateHandler(sampleMetadata);
                 } catch (Exception e) {
                     e.printStackTrace();
