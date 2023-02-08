@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
 import org.mskcc.cmo.messaging.MessageConsumer;
 import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.Status;
 import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.mskcc.smile.service.MessageHandlingService;
@@ -196,57 +197,57 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                     if (requestJson != null) {
                         LOG.info("Extracting samples from request received...");
                         String requestId = getRequestIdFromRequestJson(requestJson);
-                        List<IgoSampleManifest> samples = getSamplesFromRequestJson(requestJson);
+                        List<Object> samples = getSamplesFromRequestJson(requestJson);
 
                         // get existing samples for all patients in the request
                         Map<String, List<SampleMetadata>> patientSamplesMap = getPatientSamplesMap(samples);
 
                         // udpated samples list will store samples which had a label generated successfully
                         List<Object> updatedSamples = new ArrayList<>();
-                        for (IgoSampleManifest sample : samples) {
-                            // get existing patient samples for cmo patient id
-                            List<SampleMetadata> existingSamples =
-                                    patientSamplesMap.getOrDefault(sample.getCmoPatientId(),
-                                            new ArrayList<>());
-                            // TODO resolve any issues that arise with errors in generating cmo label
-                            String newSampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
-                                    requestId, sample, existingSamples);
-                            if (newSampleCmoLabel == null) {
-                                LOG.error("Unable to generate CMO sample label for sample: "
-                                        + sample.getIgoId());
-                                continue;
+                        for (Object sample : samples) {
+                            Map<String, Object> sampleMap = mapper.convertValue(sample, Map.class);
+                            Status sampleStatus = mapper.convertValue(sampleMap.get("status"),
+                                    Status.class);
+                            IgoSampleManifest sampleManifest = mapper.convertValue(sample,
+                                    IgoSampleManifest.class);
+
+                            if (sampleStatus.getValidationStatus()) {
+                                // get existing patient samples for cmo patient id
+                                List<SampleMetadata> existingSamples =
+                                        patientSamplesMap.getOrDefault(sampleManifest.getCmoPatientId(),
+                                                new ArrayList<>());
+                                // TODO resolve any issues that arise with errors in generating cmo label
+                                String newSampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
+                                        requestId, sampleManifest, existingSamples);
+                                if (newSampleCmoLabel == null) {
+                                    sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
+                                            requestId, sampleManifest, existingSamples);
+                                    LOG.error("Unable to generate CMO sample label for sample: "
+                                            + sampleManifest.getIgoId());
+                                    continue;
+                                }
+
+                                // check if matching sample found and determine if label actually needs
+                                // updating or if we can use the same label that
+                                // is already persisted for this sample
+                                // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC
+                                // since there might be other metadata changes that need to be persisted
+                                // that may not necessarily affect the cmo label generated
+                                String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(
+                                        sampleManifest.getIgoId(), existingSamples, newSampleCmoLabel);
+                                sampleManifest.setCmoSampleName(resolvedCmoSampleLabel);
+                                // update patient sample map and list of updated samples for request
+                                SampleMetadata sampleMetadata = new SampleMetadata(sampleManifest);
+                                sampleMetadata.setStatus(sampleStatus);
+                                patientSamplesMap.put(sampleManifest.getCmoPatientId(),
+                                        updatePatientSampleList(existingSamples, sampleMetadata));
                             }
-
-                            // check if matching sample found and determine if label actually needs updating
-                            // or if we can use the same label that is already persisted for this sample
-                            // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC since
-                            // there might be other metadata changes that need to be persisted that may not
-                            // necessarily affect the cmo label generated
-                            String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(sample.getIgoId(),
-                                    existingSamples, newSampleCmoLabel);
-                            sample.setCmoSampleName(resolvedCmoSampleLabel);
-
-                            // update patient sample map and list of updated samples for request
-                            updatedSamples.add(sample);
-                            patientSamplesMap.put(sample.getCmoPatientId(),
-                                    updatePatientSampleList(existingSamples, sample));
+                            updatedSamples.add(sampleManifest);
                         }
-
-                        // if sizes of the input samples and updated samples are different
-                        // then that indicates that some labels were not generated successfully
-                        // for the current request
-                        if (samples.size() != updatedSamples.size()) {
-                            LOG.error("Input sample size does not match the number of samples for which "
-                                    + "a CMO label was successfully generated - logging request status");
-                            requestStatusLogger.logRequestStatus(requestJson,
-                                    RequestStatusLogger.StatusType.REQ_SAMPLE_FAILED_LABEL_GENERATION);
-                        }
-
                         // update contents of 'samples' in request json map to publish
                         // and add updated request json to publisher queue
                         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
-                        requestJsonMap.put("samples",
-                                updatedSamples);
+                        requestJsonMap.put("samples", updatedSamples);
                         switch (igoRequestDest) {
                             case NEW_REQUEST_DEST:
                                 igoNewRequestQueue.add(mapper.writeValueAsString(requestJsonMap));
@@ -298,19 +299,31 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                     if (sample != null) {
                         List<SampleMetadata> existingSamples =
                                 getExistingPatientSamples(sample.getCmoPatientId());
+                        // Case when sample update json doesn't have status
+                        if (sample.getStatus() == null) {
+                            Status newSampleStatus = cmoLabelGeneratorService
+                                    .generateSampleStatus(sample, existingSamples);
+                            sample.setStatus(newSampleStatus);
+                        }
+                        if (sample.getStatus().getValidationStatus()) {
+                            // generate new cmo sample label and update sample metadata object
+                            String newCmoSampleLabel =
+                                    cmoLabelGeneratorService.generateCmoSampleLabel(sample, existingSamples);
+                            if (newCmoSampleLabel == null) {
+                                Status newSampleStatus = cmoLabelGeneratorService
+                                        .generateSampleStatus(sample, existingSamples);
+                                sample.setStatus(newSampleStatus);
+                            }
 
-                        // generate new cmo sample label and update sample metadata object
-                        String newCmoSampleLabel =
-                                cmoLabelGeneratorService.generateCmoSampleLabel(sample, existingSamples);
-
-                        // check if matching sample found and determine if label actually needs updating
-                        // or if we can use the same label that is already persisted for this sample
-                        // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC since
-                        // there might be other metadata changes that need to be persisted that may not
-                        // necessarily affect the cmo label generated
-                        String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(sample.getPrimaryId(),
-                                existingSamples, newCmoSampleLabel);
-                        sample.setCmoSampleName(resolvedCmoSampleLabel);
+                            // check if matching sample found and determine if label actually needs updating
+                            // or if we can use the same label that is already persisted for this sample
+                            // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC since
+                            // there might be other metadata changes that need to be persisted that may not
+                            // necessarily affect the cmo label generated
+                            String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(
+                                    sample.getPrimaryId(), existingSamples, newCmoSampleLabel);
+                            sample.setCmoSampleName(resolvedCmoSampleLabel);
+                        }
                         LOG.info("Publishing sample to IGO_SAMPLE_UPDATE_TOPIC");
                         messagingGateway.publish(IGO_SAMPLE_UPDATE_TOPIC, mapper.writeValueAsString(sample));
                     }
@@ -368,31 +381,32 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     }
 
     private List<SampleMetadata> updatePatientSampleList(List<SampleMetadata> existingSamples,
-            IgoSampleManifest sample) throws JsonProcessingException {
+            SampleMetadata sample) throws JsonProcessingException {
         Boolean foundMatching = Boolean.FALSE;
         // if sample already exists in the existing samples list then simply replace at the matching index
         for (SampleMetadata existing : existingSamples) {
-            if (existing.getPrimaryId().equalsIgnoreCase(sample.getIgoId())) {
-                existingSamples.set(existingSamples.indexOf(existing), new SampleMetadata(sample));
+            if (existing.getPrimaryId().equalsIgnoreCase(sample.getPrimaryId())) {
+                existingSamples.set(existingSamples.indexOf(existing), sample);
                 foundMatching = Boolean.TRUE;
                 break;
             }
         }
         // if matching sample not found then append to list and return
         if (!foundMatching) {
-            existingSamples.add(new SampleMetadata(sample));
+            existingSamples.add(sample);
         }
         return existingSamples;
     }
 
-    private Map<String, List<SampleMetadata>> getPatientSamplesMap(List<IgoSampleManifest> samples)
+    private Map<String, List<SampleMetadata>> getPatientSamplesMap(List<Object> samples)
             throws Exception {
         Map<String, List<SampleMetadata>> patientSamplesMap = new HashMap<>();
-        for (IgoSampleManifest sample : samples) {
+        for (Object sample : samples) {
+            IgoSampleManifest sampleManifest = mapper.convertValue(sample, IgoSampleManifest.class);
             // get or request existing patient samples and update patient sample mapping
-            if (!patientSamplesMap.containsKey(sample.getCmoPatientId())) {
-                List<SampleMetadata> ptSamples = getExistingPatientSamples(sample.getCmoPatientId());
-                patientSamplesMap.put(sample.getCmoPatientId(),
+            if (!patientSamplesMap.containsKey(sampleManifest.getCmoPatientId())) {
+                List<SampleMetadata> ptSamples = getExistingPatientSamples(sampleManifest.getCmoPatientId());
+                patientSamplesMap.put(sampleManifest.getCmoPatientId(),
                         new ArrayList<>(ptSamples));
             }
         }
@@ -413,12 +427,12 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         return requestJsonMap.get("requestId").toString();
     }
 
-    private List<IgoSampleManifest> getSamplesFromRequestJson(String requestJson)
+    private List<Object> getSamplesFromRequestJson(String requestJson)
             throws JsonProcessingException {
         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
-        List<IgoSampleManifest> sampleManifests =
+        List<Object> sampleManifests =
                 Arrays.asList(mapper.convertValue(requestJsonMap.get("samples"),
-                IgoSampleManifest[].class));
+                        Object[].class));
         return sampleManifests;
     }
 
