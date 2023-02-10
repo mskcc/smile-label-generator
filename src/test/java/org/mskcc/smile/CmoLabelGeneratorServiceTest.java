@@ -15,6 +15,7 @@ import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.config.TestConfiguration;
 import org.mskcc.smile.model.MockJsonTestData;
 import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.Status;
 import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +90,11 @@ public class CmoLabelGeneratorServiceTest {
                 updatedSample, existingSamples);
         // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-MP789JR-P003-d02", newCmoLabel);
+
+        Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
+                updatedSample, existingSamples);
+        Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
+        Assert.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     /**
@@ -130,6 +136,11 @@ public class CmoLabelGeneratorServiceTest {
 
         // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X003-d02", newCmoLabel);
+
+        Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
+                updatedSample, existingSamples);
+        Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
+        Assert.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     /**
@@ -170,6 +181,12 @@ public class CmoLabelGeneratorServiceTest {
 
         // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X001-d02", newCmoLabel);
+
+        
+        Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
+                updatedSample, existingSamples);
+        Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
+        Assert.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     /**
@@ -210,6 +227,11 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
         Assert.assertNull(newCmoLabel);
+
+        Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
+                updatedSample, existingSamples);
+        Assert.assertEquals(Boolean.FALSE, sampleStatus.getValidationStatus());
+        Assert.assertNotSame(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     @Test

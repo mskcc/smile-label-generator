@@ -1,5 +1,7 @@
 package org.mskcc.smile.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +17,7 @@ import org.mskcc.smile.commons.enums.SampleOrigin;
 import org.mskcc.smile.commons.enums.SampleType;
 import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.model.SampleMetadata;
+import org.mskcc.smile.model.Status;
 import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
+    private final ObjectMapper mapper = new ObjectMapper();
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorServiceImpl.class);
     // example: C-1235-X001-d01
     public static final Pattern CMO_SAMPLE_ID_REGEX =
@@ -238,7 +242,56 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
+    }
 
+    @Override
+    public Status generateSampleStatus(String requestId, IgoSampleManifest sampleManifest,
+            List<SampleMetadata> existingSamples) throws JsonProcessingException {
+        Status sampleStatus = new Status();
+        Map<String, String> validationReport = new HashMap<>();
+
+        if (resolveSampleTypeAbbreviation(sampleManifest) == null) {
+            validationReport.put("sample type abbreviation",
+                    "could not resolve based on specimenType, sampleOrigin, or sampleClass");
+        }
+        if (resolveNucleicAcidAbbreviation(sampleManifest) == null) {
+            validationReport.put("nucleic acid abbreviation",
+                    "could not resolve based on sampleType or naToExtract");
+        }
+        if (validationReport.isEmpty()) {
+            sampleStatus.setValidationStatus(Boolean.TRUE);
+        } else {
+            sampleStatus.setValidationStatus(Boolean.FALSE);
+        }
+        sampleStatus.setValidationReport(mapper.writeValueAsString(validationReport));
+        return sampleStatus;
+    }
+
+    @Override
+    public Status generateSampleStatus(SampleMetadata sampleMetadata,
+            List<SampleMetadata> existingSamples) throws JsonProcessingException {
+        Status sampleStatus = new Status();
+        Map<String, String> validationReport = new HashMap<>();
+
+        if (resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
+                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType()) == null) {
+            validationReport.put("sample type abbreviation",
+                    "could not resolve based on specimenType, sampleOrigin, or sampleClass");
+        }
+        String sampleTypeString = sampleMetadata.getCmoSampleIdFields().get("sampleType");
+        String recipe = sampleMetadata.getCmoSampleIdFields().get("recipe");
+        String naToExtract = sampleMetadata.getCmoSampleIdFields().get("naToExtract");
+        if (resolveNucleicAcidAbbreviation(sampleTypeString, recipe, naToExtract) == null) {
+            validationReport.put("nucleic acid abbreviation",
+                    "could not resolve based on sampleType or naToExtract");
+        }
+        if (validationReport.isEmpty()) {
+            sampleStatus.setValidationStatus(Boolean.TRUE);
+        } else {
+            sampleStatus.setValidationStatus(Boolean.FALSE);
+        }
+        sampleStatus.setValidationReport(mapper.writeValueAsString(validationReport));
+        return sampleStatus;
     }
 
     private String getFormattedCmoSampleLabel(String patientId, String sampleTypeAbbreviation,
@@ -330,6 +383,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             LOG.debug("Could not resolve specimen type acid from 'specimenType': "
                     + specimenTypeValue);
         }
+
         // if abbreviation is still not resolved then try to resolve from sample class
         CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
         return SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
