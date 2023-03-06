@@ -402,11 +402,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             throws Exception {
         Map<String, List<SampleMetadata>> patientSamplesMap = new HashMap<>();
         for (Object sample : samples) {
-            IgoSampleManifest sampleManifest = mapper.convertValue(sample, IgoSampleManifest.class);
+            SampleMetadata sampleMetadata = mapper.convertValue(sample, SampleMetadata.class);
             // get or request existing patient samples and update patient sample mapping
-            if (!patientSamplesMap.containsKey(sampleManifest.getCmoPatientId())) {
-                List<SampleMetadata> ptSamples = getExistingPatientSamples(sampleManifest.getCmoPatientId());
-                patientSamplesMap.put(sampleManifest.getCmoPatientId(),
+            if (!patientSamplesMap.containsKey(sampleMetadata.getCmoPatientId())) {
+                List<SampleMetadata> ptSamples = getExistingPatientSamples(sampleMetadata.getCmoPatientId());
+                patientSamplesMap.put(sampleMetadata.getCmoPatientId(),
                         new ArrayList<>(ptSamples));
             }
         }
