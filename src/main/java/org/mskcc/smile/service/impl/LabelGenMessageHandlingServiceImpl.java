@@ -70,7 +70,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
 
-    private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static boolean initialized = false;
     private static volatile boolean shutdownInitiated;
     private static final ExecutorService exec = Executors.newCachedThreadPool();
@@ -406,7 +407,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             IgoSampleManifest igoSampleManifest = mapper.convertValue(sample, IgoSampleManifest.class);
             // get or request existing patient samples and update patient sample mapping
             if (!patientSamplesMap.containsKey(igoSampleManifest.getCmoPatientId())) {
-                List<SampleMetadata> ptSamples = getExistingPatientSamples(igoSampleManifest.getCmoPatientId());
+                List<SampleMetadata> ptSamples = getExistingPatientSamples(
+                        igoSampleManifest.getCmoPatientId());
                 patientSamplesMap.put(igoSampleManifest.getCmoPatientId(),
                         new ArrayList<>(ptSamples));
             }
