@@ -1,6 +1,7 @@
 package org.mskcc.smile.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nats.client.Message;
 import java.nio.charset.StandardCharsets;
@@ -69,10 +70,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
 
-    @Autowired
-    private RequestStatusLogger requestStatusLogger;
-
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static boolean initialized = false;
     private static volatile boolean shutdownInitiated;
     private static final ExecutorService exec = Executors.newCachedThreadPool();
@@ -206,8 +205,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         List<Object> updatedSamples = new ArrayList<>();
                         for (Object sample : samples) {
                             Map<String, Object> sampleMap = mapper.convertValue(sample, Map.class);
-                            Status sampleStatus = mapper.convertValue(sampleMap.get("status"),
-                                    Status.class);
+                            Map<String, Object> sampleStatusMap = mapper.convertValue(
+                                    sampleMap.get("status"), Map.class);
+                            Status sampleStatus = new Status(Boolean.valueOf(
+                                    sampleStatusMap.get("validationStatus").toString()),
+                                    sampleStatusMap.get("validationReport").toString());
                             IgoSampleManifest sampleManifest = mapper.convertValue(sample,
                                     IgoSampleManifest.class);
 
@@ -402,11 +404,12 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             throws Exception {
         Map<String, List<SampleMetadata>> patientSamplesMap = new HashMap<>();
         for (Object sample : samples) {
-            SampleMetadata sampleMetadata = mapper.convertValue(sample, SampleMetadata.class);
+            IgoSampleManifest igoSampleManifest = mapper.convertValue(sample, IgoSampleManifest.class);
             // get or request existing patient samples and update patient sample mapping
-            if (!patientSamplesMap.containsKey(sampleMetadata.getCmoPatientId())) {
-                List<SampleMetadata> ptSamples = getExistingPatientSamples(sampleMetadata.getCmoPatientId());
-                patientSamplesMap.put(sampleMetadata.getCmoPatientId(),
+            if (!patientSamplesMap.containsKey(igoSampleManifest.getCmoPatientId())) {
+                List<SampleMetadata> ptSamples = getExistingPatientSamples(
+                        igoSampleManifest.getCmoPatientId());
+                patientSamplesMap.put(igoSampleManifest.getCmoPatientId(),
                         new ArrayList<>(ptSamples));
             }
         }
