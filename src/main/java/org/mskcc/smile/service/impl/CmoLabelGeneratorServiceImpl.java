@@ -386,7 +386,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // if abbreviation is still not resolved then try to resolve from sample class
         CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
-        return SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+        if (sampleClass != null) {
+            return SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+        }
+        return SAMPLE_CLASS_ABBREV_MAP.get(CmoSampleClass.UNKNOWN_TUMOR);
     }
 
     /**
