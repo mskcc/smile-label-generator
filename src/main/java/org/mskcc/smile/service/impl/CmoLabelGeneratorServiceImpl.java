@@ -159,8 +159,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     }
 
     private Boolean compareMatcherGroups(Matcher matcher1, Matcher matcher2, Integer group) {
-        System.out.println("\n\nOLD" +  matcher2.group(group));
-        System.out.println("\n\n\n\n\n\n\n\nNEW" +  matcher1.group(group));
         return matcher1.group(group).equalsIgnoreCase(matcher2.group(group));
     }
 
