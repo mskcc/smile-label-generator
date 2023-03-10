@@ -362,7 +362,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 cmoPatientId, "Organoid", cmoId2);
         existingSamples.add(existingSample2);
 
-        // sample 1 with an update that does not affect the generated cmo label
+        // sample 1 with an update that does affect the generated cmo label
         IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.ORGANOID, NucleicAcid.RNA);
         String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
@@ -370,6 +370,16 @@ public class PortedLimsRestCmoLabelGenerationTest {
         Assert.assertEquals("C-1235-G001-r01", updatedCmoLabel);
         Boolean needsUpdates = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assert.assertTrue(needsUpdates);
+    }
+
+    /**
+     * Not ported from LIMS
+     * Tests if igoSampleRequiresLabelUpdate returns true even when existing label is empty
+     */
+    @Test
+    public void testRequiresUpdateWhenExistingLabelIsEmpty() throws Exception {
+        Boolean needsUpdates1 = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate("C-1235-G001-d01", "");
+        Assert.assertTrue(needsUpdates1);
     }
 
     private SampleMetadata getSampleMetadataWithCmoLabel(String igoId, String cmoPatientId,
