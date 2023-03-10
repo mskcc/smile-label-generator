@@ -129,8 +129,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return Boolean.TRUE;
         }
 
-        if (!matcherNewLabel.find() || !matcherExistingLabel.find()) {
-            throw new IllegalStateException("New CMO label and/or existing CMO label do not meet CMO ID "
+        if (!matcherExistingLabel.find() || !matcherNewLabel.find()) {
+            if (matcherNewLabel.find() && !matcherExistingLabel.find()) {
+                return Boolean.TRUE;
+            }
+            throw new IllegalStateException("New CMO label and existing CMO label do not meet CMO ID "
                     + "regex requirements: new = " + newCmoLabel + ", existingLabel = " + existingCmoLabel);
         }
 
@@ -156,6 +159,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     }
 
     private Boolean compareMatcherGroups(Matcher matcher1, Matcher matcher2, Integer group) {
+        System.out.println("\n\nOLD" +  matcher2.group(group));
+        System.out.println("\n\n\n\n\n\n\n\nNEW" +  matcher1.group(group));
         return matcher1.group(group).equalsIgnoreCase(matcher2.group(group));
     }
 
