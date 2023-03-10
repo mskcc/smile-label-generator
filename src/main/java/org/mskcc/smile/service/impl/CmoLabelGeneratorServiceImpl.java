@@ -129,8 +129,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return Boolean.TRUE;
         }
 
-        if (!matcherNewLabel.find() || !matcherExistingLabel.find()) {
-            throw new IllegalStateException("New CMO label and/or existing CMO label do not meet CMO ID "
+        if (matcherNewLabel.find() && !matcherExistingLabel.find()) {
+            return Boolean.TRUE;
+        }
+
+        if (!matcherNewLabel.find() && !matcherExistingLabel.find()) {
+            throw new IllegalStateException("New CMO label and existing CMO label do not meet CMO ID "
                     + "regex requirements: new = " + newCmoLabel + ", existingLabel = " + existingCmoLabel);
         }
 
