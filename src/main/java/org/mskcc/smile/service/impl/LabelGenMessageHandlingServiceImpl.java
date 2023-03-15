@@ -226,25 +226,26 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                             requestId, sampleManifest, existingSamples);
                                     LOG.error("Unable to generate CMO sample label for sample: "
                                             + sampleManifest.getIgoId());
-                                    continue;
+                                } else {
+                                    // check if matching sample found and determine if label actually needs
+                                    // updating or if we can use the same label that
+                                    // is already persisted for this sample
+                                    // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC
+                                    // since there might be other metadata changes that need to be persisted
+                                    // that may not necessarily affect the cmo label generated
+                                    String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(
+                                            sampleManifest.getIgoId(), existingSamples, newSampleCmoLabel);
+                                    sampleMap.put("cmoSampleName", resolvedCmoSampleLabel);
+                                    // update patient sample map and list of updated samples for request
+                                    SampleMetadata sampleMetadata = new SampleMetadata(sampleManifest);
+                                    sampleMetadata.setStatus(sampleStatus);
+                                    patientSamplesMap.put(sampleManifest.getCmoPatientId(),
+                                            updatePatientSampleList(existingSamples, sampleMetadata));
                                 }
-
-                                // check if matching sample found and determine if label actually needs
-                                // updating or if we can use the same label that
-                                // is already persisted for this sample
-                                // note that we want to continue publishing to the IGO_SAMPLE_UPDATE_TOPIC
-                                // since there might be other metadata changes that need to be persisted
-                                // that may not necessarily affect the cmo label generated
-                                String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(
-                                        sampleManifest.getIgoId(), existingSamples, newSampleCmoLabel);
-                                sampleManifest.setCmoSampleName(resolvedCmoSampleLabel);
-                                // update patient sample map and list of updated samples for request
-                                SampleMetadata sampleMetadata = new SampleMetadata(sampleManifest);
-                                sampleMetadata.setStatus(sampleStatus);
-                                patientSamplesMap.put(sampleManifest.getCmoPatientId(),
-                                        updatePatientSampleList(existingSamples, sampleMetadata));
+                                // update sample status
+                                sampleMap.replace("status", sampleStatus);
                             }
-                            updatedSamples.add(sampleManifest);
+                            updatedSamples.add(sampleMap);
                         }
                         // update contents of 'samples' in request json map to publish
                         // and add updated request json to publisher queue
