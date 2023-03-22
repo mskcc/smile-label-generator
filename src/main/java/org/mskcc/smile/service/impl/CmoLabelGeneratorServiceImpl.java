@@ -35,7 +35,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             Pattern.compile("^C-([a-zA-Z0-9]+)-([NTRMLUPSGX])([0-9]{3})-([d|r])(.*$)");
     // example: JH123-12345T
     public static final Pattern CMO_CELLLINE_ID_REGEX =
-            Pattern.compile("^([A-Za-z0-9]+)-([A-Za-z0-9]+)$");
+            Pattern.compile("^([A-Za-z0-9]+[A-Za-z0-9_]+)-([A-Za-z0-9]+)$");
     public static final String CMO_LABEL_SEPARATOR = "-";
     public static final Integer CMO_PATIENT_ID_GROUP = 1;
     public static final Integer CMO_SAMPLE_TYPE_ABBREV_GROUP = 2;
