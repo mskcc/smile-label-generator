@@ -239,6 +239,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                     // update patient sample map and list of updated samples for request
                                     SampleMetadata sampleMetadata = new SampleMetadata(sampleManifest);
                                     sampleMetadata.setStatus(sampleStatus);
+                                    sampleMetadata.setCmoSampleName(resolvedCmoSampleLabel);
                                     patientSamplesMap.put(sampleManifest.getCmoPatientId(),
                                             updatePatientSampleList(existingSamples, sampleMetadata));
                                 }
