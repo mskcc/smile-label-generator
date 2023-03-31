@@ -372,6 +372,10 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 } else {
                     throw new IllegalStateException(e);
                 }
+            } catch (NullPointerException e2) {
+                LOG.error("NPE caught during label generation check: ", e2);
+                LOG.error("Falling back on existing cmo sample name for sample.");
+                return matchingSample.getCmoSampleName();
             }
             if (!updateRequired) {
                 LOG.info("No change detected for CMO sample label metadata - using "
