@@ -37,7 +37,7 @@
     <jackson.version>2.11.2</jackson.version>
     <!-- smile messaging and shared entities dependency versions -->
     <smile_messaging_java.group>com.github.mskcc</smile_messaging_java.group>
-    <smile_messaging_java.version>1.3.10.RELEASE</smile_messaging_java.version>
+    <smile_messaging_java.version>1.3.11.RELEASE</smile_messaging_java.version>
     <!-- smile commons centralized config properties -->
     <smile_commons.group>com.github.mskcc</smile_commons.group>
     <smile_commons.version>1.3.11.RELEASE</smile_commons.version>
