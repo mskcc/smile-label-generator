@@ -182,7 +182,7 @@ public class CmoLabelGeneratorServiceTest {
         // if the cmo label before the update is C-MP789JR-X001-d
         Assert.assertEquals("C-newPatient-X001-d02", newCmoLabel);
 
-        
+
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
         Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
@@ -226,7 +226,7 @@ public class CmoLabelGeneratorServiceTest {
         // should return null string
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
-        Assert.assertNull(newCmoLabel);
+        Assert.assertEquals("C-MP789JR-F001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
@@ -268,6 +268,13 @@ public class CmoLabelGeneratorServiceTest {
         Assert.assertEquals(sampleExpectedLabel, sampleUpdatedNaExtractLabel);
         Assert.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
                 sampleUpdatedNaExtractLabel, sampleExpectedLabel));
+    }
+
+    @Test
+    public void testDefaultSampleTypeAbbreviation() {
+        String sampleTypeAbbrev = cmoLabelGeneratorService.resolveSampleTypeAbbreviation("RapidAutopsy",
+                "Cerebrospinal Fluid", "Other");
+        Assert.assertTrue(sampleTypeAbbrev.equals("F"));
     }
 
     private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,

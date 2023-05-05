@@ -172,11 +172,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // resolve sample type abbreviation
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleManifest);
-        if (sampleTypeAbbreviation == null) {
-            LOG.error("Could not resolve sample type abbreviation from specimen type,"
-                    + " sample origin, or sample class: " + sampleManifest.toString());
-            return null;
-        }
 
         // resolve the sample counter value to use for the cmo label
         Integer sampleCounter =  resolveSampleIncrementValue(sampleManifest.getIgoId(), existingSamples);
@@ -253,7 +248,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Status sampleStatus = new Status();
         Map<String, String> validationReport = new HashMap<>();
 
-        if (resolveSampleTypeAbbreviation(sampleManifest) == null) {
+        String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleManifest);
+        if (sampleTypeAbbreviation == null
+                || sampleTypeAbbreviation.equals("F")) {
             validationReport.put("sample type abbreviation",
                     "could not resolve based on specimenType, sampleOrigin, or sampleClass");
         }
@@ -276,8 +273,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Status sampleStatus = new Status();
         Map<String, String> validationReport = new HashMap<>();
 
-        if (resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
-                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType()) == null) {
+        String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
+                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType());
+        if (sampleTypeAbbreviation == null
+                || sampleTypeAbbreviation.equals("F")) {
             validationReport.put("sample type abbreviation",
                     "could not resolve based on specimenType, sampleOrigin, or sampleClass");
         }
@@ -361,7 +360,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         return resolveNucleicAcidAbbreviation(sampleTypeString, recipe, naToExtract);
     }
 
-    private String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
+    @Override
+    public String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
             String cmoSampleClassValue) {
         try {
             SpecimenType specimenType = SpecimenType.fromValue(specimenTypeValue);
@@ -389,7 +389,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // if abbreviation is still not resolved then try to resolve from sample class
         CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
-        return SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+        String sampleTypeAbbreviation = SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+        if (sampleTypeAbbreviation == null) {
+            LOG.warn("Could not resolve sample type abbreviation from specimen type,"
+                    + " sample origin, or sample class - using default 'F' ");
+            return "F";
+        }
+        return sampleTypeAbbreviation;
     }
 
     /**

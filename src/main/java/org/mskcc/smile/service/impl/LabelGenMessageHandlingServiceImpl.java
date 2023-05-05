@@ -28,7 +28,6 @@ import org.mskcc.smile.model.Status;
 import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.mskcc.smile.service.MessageHandlingService;
-import org.mskcc.smile.service.util.RequestStatusLogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
