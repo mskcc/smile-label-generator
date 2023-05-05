@@ -19,4 +19,6 @@ public interface CmoLabelGeneratorService {
     Status generateSampleStatus(SampleMetadata sampleMetadata,
             List<SampleMetadata> existingSamples) throws JsonProcessingException;
     Boolean igoSampleRequiresLabelUpdate(String newCmoLabel, String existingCmoLabel);
+    String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
+            String cmoSampleClassValue);
 }
