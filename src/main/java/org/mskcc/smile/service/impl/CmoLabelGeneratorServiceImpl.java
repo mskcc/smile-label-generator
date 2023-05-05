@@ -32,7 +32,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorServiceImpl.class);
     // example: C-1235-X001-d01
     public static final Pattern CMO_SAMPLE_ID_REGEX =
-            Pattern.compile("^C-([a-zA-Z0-9]+)-([NTRMLUPSGX])([0-9]{3})-([d|r])(.*$)");
+            Pattern.compile("^C-([a-zA-Z0-9]+)-([NTRMLUPSGXF])([0-9]{3})-([d|r])(.*$)");
     // example: JH123-12345T
     public static final Pattern CMO_CELLLINE_ID_REGEX =
             Pattern.compile("^([A-Za-z0-9]+[A-Za-z0-9_]+)-([A-Za-z0-9]+)$");
