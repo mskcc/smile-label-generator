@@ -193,8 +193,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 try {
                     String requestJson = labelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (requestJson != null) {
-                        LOG.info("Extracting samples from request received...");
                         String requestId = getRequestIdFromRequestJson(requestJson);
+                        LOG.info("cmoLabelGeneratorHandling while loop - extracting samples from request received: " + requestId);
                         List<Object> samples = getSamplesFromRequestJson(requestJson);
 
                         // get existing samples for all patients in the request
@@ -423,6 +423,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     }
 
     private List<SampleMetadata> getExistingPatientSamples(String cmoPatientId) throws Exception {
+        LOG.info("**************************");
+        LOG.info("getExistingPatientSamples(), calling messagingGateway.request: ");
+        LOG.info("topic: " + PATIENT_SAMPLES_REQUEST_TOPIC);
+        LOG.info("patient: " + cmoPatientId);
+        LOG.info("**************************");
         Message reply = messagingGateway.request(PATIENT_SAMPLES_REQUEST_TOPIC,
                     cmoPatientId);
         SampleMetadata[] ptSamples = mapper.readValue(
