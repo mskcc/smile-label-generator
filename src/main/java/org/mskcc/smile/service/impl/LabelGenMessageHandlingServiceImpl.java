@@ -204,6 +204,14 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         List<Object> updatedSamples = new ArrayList<>();
                         for (Object sample : samples) {
                             Map<String, Object> sampleMap = mapper.convertValue(sample, Map.class);
+                            if (StringUtils.isBlank(sampleMap.get("cmoPatientId").toString())) {
+                                // skip over samples with missing cmo patient id this should be
+                                // getting caught by the request filter but we are taking extra precautions
+                                // due to ongoing timeout exception investigations
+                                LOG.warn("Sample is missing CMO patient ID that was not caught by the "
+                                        + "request filter: " + mapper.writeValueAsString(sampleMap));
+                                continue;
+                            }
                             Map<String, Object> sampleStatusMap = mapper.convertValue(
                                     sampleMap.get("status"), Map.class);
                             Status sampleStatus = new Status(Boolean.valueOf(
@@ -412,7 +420,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         for (Object sample : samples) {
             IgoSampleManifest igoSampleManifest = mapper.convertValue(sample, IgoSampleManifest.class);
             // get or request existing patient samples and update patient sample mapping
-            if (!patientSamplesMap.containsKey(igoSampleManifest.getCmoPatientId())) {
+            if (!patientSamplesMap.containsKey(igoSampleManifest.getCmoPatientId())
+                    && !StringUtils.isBlank(igoSampleManifest.getCmoPatientId())) {
                 List<SampleMetadata> ptSamples = getExistingPatientSamples(
                         igoSampleManifest.getCmoPatientId());
                 patientSamplesMap.put(igoSampleManifest.getCmoPatientId(),

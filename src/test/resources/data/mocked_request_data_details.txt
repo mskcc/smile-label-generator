@@ -25,3 +25,5 @@ mockRequest2aEmptySampleManifestValues	incoming_requests/mocked_request2a_one_em
 mockRequest1SamplesMissingFastQs	incoming_requests/mocked_request1_sample_missing_fastqs.json	Mock requset json with 2 samples missing fastqs
 mockRequest1AllSamplesMissingFastQs	incoming_requests/mocked_request1_all_samples_missing_fastqs.json	Mock requset json with all samples missing fastqs
 mockRequest1eNullStringBaitSet	incoming_requests/mocked_request1e_null_string_baitset.json	Mock requset json with "null" baitset values
+mockRequest7SamplesMissingPids	incoming_requests/mocked_request7_samples_missing_pids.json	Mock request where 3 of 4 samples are missing CMO patient IDs.
+mockValidatedRequest7SamplesMissingPids	other_mocked_data/mocked_validated_request7_samples_missing_pids.json	Request JSON after going through validation and sanity checks in request filter. Based on 'mockRequest7SamplesMissingPids'.
