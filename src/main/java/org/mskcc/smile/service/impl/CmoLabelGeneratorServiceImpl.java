@@ -462,6 +462,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // to prevent accidentally giving samples the same counter
         Integer maxIncrement = 0;
         for (SampleMetadata sample : samples) {
+            // skip samples without a defined cmo sample label
+            if (StringUtils.isBlank(sample.getCmoSampleName())) {
+                continue;
+            }
             // skip cell line samples
             if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
                 continue;
