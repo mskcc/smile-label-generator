@@ -388,12 +388,21 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
 
         // if abbreviation is still not resolved then try to resolve from sample class
-        CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
-        String sampleTypeAbbreviation = SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
-        if (sampleTypeAbbreviation == null) {
+        String sampleTypeAbbreviation = "F";
+        try {
+            CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
+            if (SAMPLE_CLASS_ABBREV_MAP.containsKey(sampleClass)) {
+                sampleTypeAbbreviation = SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+            }
+        } catch (Exception e) {
+            // happens if cmoSampleClassValue is not found in CmoSampleClass
+            // nothing to do here since since sampleTypeAbbreviation
+            // is initialized to default 'F'
+        }
+
+        if (sampleTypeAbbreviation == "F") {
             LOG.warn("Could not resolve sample type abbreviation from specimen type,"
-                    + " sample origin, or sample class - using default 'F' ");
-            return "F";
+                     + " sample origin, or sample class - using default 'F' ");
         }
         return sampleTypeAbbreviation;
     }
