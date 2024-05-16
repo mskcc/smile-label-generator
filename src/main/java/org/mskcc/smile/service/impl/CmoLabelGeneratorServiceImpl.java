@@ -310,7 +310,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             // if pooled library then resolve value based on recipe
             switch (sampleType) {
                 case POOLED_LIBRARY:
-                    return recipe.equalsIgnoreCase("RNASeq")
+                    return (recipe.equalsIgnoreCase("RNASeq") || recipe.equalsIgnoreCase("User_RNA"))
                             ? "r" : "d";
                 case DNA:
                 case CFDNA:
