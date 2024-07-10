@@ -509,6 +509,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // to prevent accidentally giving samples the same counter
         Integer maxIncrement = 0;
         for (SampleMetadata sample : samples) {
+            // skip samples with null cmo sample name (possible now that we allow all samples to get in db
+            // even if they fail validation and/or fail label generation)
+            if (StringUtils.isBlank(sample.getCmoSampleName())) {
+                LOG.warn("Skipping patient sample with null CMO sample label: CMO patient ID = "
+                        + sample.getCmoPatientId() + ", sample primary ID = " + sample.getPrimaryId());
+                continue;
+            }
             // skip cell line samples
             if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
                 continue;
