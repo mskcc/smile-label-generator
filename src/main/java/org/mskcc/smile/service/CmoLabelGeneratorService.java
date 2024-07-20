@@ -21,4 +21,6 @@ public interface CmoLabelGeneratorService {
     Boolean igoSampleRequiresLabelUpdate(String newCmoLabel, String existingCmoLabel);
     String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
             String cmoSampleClassValue);
+    String generateValidationReport(String originalJson, String filteredJson)
+            throws JsonProcessingException;
 }
