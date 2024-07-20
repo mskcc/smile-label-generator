@@ -193,8 +193,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 try {
                     String requestJson = labelGeneratorQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (requestJson != null) {
-                        LOG.info("Extracting samples from request received...");
                         String requestId = getRequestIdFromRequestJson(requestJson);
+                        LOG.info("Extracting samples from request received: " + requestId);
                         List<Object> samples = getSamplesFromRequestJson(requestJson);
 
                         // get existing samples for all patients in the request
@@ -259,12 +259,19 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         // and add updated request json to publisher queue
                         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
                         requestJsonMap.put("samples", updatedSamples);
+                        String updatedRequestJson = mapper.writeValueAsString(requestJsonMap);
+                        // data dog log message
+                        String ddogLogMessage = cmoLabelGeneratorService.generateValidationReport(
+                                requestJson, updatedRequestJson);
+                        if (ddogLogMessage != null) {
+                            LOG.info(ddogLogMessage);
+                        }
                         switch (igoRequestDest) {
                             case NEW_REQUEST_DEST:
-                                igoNewRequestQueue.add(mapper.writeValueAsString(requestJsonMap));
+                                igoNewRequestQueue.add(updatedRequestJson);
                                 break;
                             case PROMOTED_REQUEST_DEST:
-                                igoPromotedRequestQueue.add(mapper.writeValueAsString(requestJsonMap));
+                                igoPromotedRequestQueue.add(updatedRequestJson);
                                 break;
                             default:
                                 break;
@@ -308,6 +315,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 try {
                     SampleMetadata sample = cmoSampleLabelUpdateQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (sample != null) {
+                        String origSampleJson = mapper.writeValueAsString(sample);
                         List<SampleMetadata> existingSamples =
                                 getExistingPatientSamples(sample.getCmoPatientId());
                         // Case when sample update json doesn't have status
@@ -335,8 +343,15 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                     sample.getPrimaryId(), existingSamples, newCmoSampleLabel);
                             sample.setCmoSampleName(resolvedCmoSampleLabel);
                         }
+                        String updatedSampleJson = mapper.writeValueAsString(sample);
+                        // data dog log message
+                        String ddogLogMessage = cmoLabelGeneratorService.generateValidationReport(
+                                origSampleJson, updatedSampleJson);
+                        if (ddogLogMessage != null) {
+                            LOG.info(ddogLogMessage);
+                        }
                         LOG.info("Publishing sample to IGO_SAMPLE_UPDATE_TOPIC");
-                        messagingGateway.publish(IGO_SAMPLE_UPDATE_TOPIC, mapper.writeValueAsString(sample));
+                        messagingGateway.publish(IGO_SAMPLE_UPDATE_TOPIC, updatedSampleJson);
                     }
                     if (interrupted && cmoSampleLabelUpdateQueue.isEmpty()) {
                         break;
