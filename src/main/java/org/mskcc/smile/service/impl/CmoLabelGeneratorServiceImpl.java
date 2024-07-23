@@ -605,8 +605,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             for (Object s : sampleList) {
                 Map<String, Object> sampleMap = mapper.convertValue(s, Map.class);
                 Map<String, Object> sampleStatusMap = mapper.convertValue(sampleMap.get("status"), Map.class);
-                Map<String, String> sampleValidationReport =
-                        mapper.convertValue(sampleStatusMap.get("validationReport"), Map.class);
+                Map<String, String> sampleValidationReport = new HashMap<>();
+                if (!sampleStatusMap.get("validationReport").toString().equals("{}")) {
+                    sampleValidationReport =
+                            mapper.convertValue(sampleStatusMap.get("validationReport"), Map.class);
+                }
+
                 try {
                     String sampleId = ObjectUtils.firstNonNull(
                             sampleMap.get("igoId"), sampleMap.get("primaryId")).toString();
