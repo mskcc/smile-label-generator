@@ -34,5 +34,3 @@ num.promoted_request_handler_threads=
 # publishing failures filepath
 smile.publishing_failures_filepath=
 
-# detailed consistency checking logger filepath
-cmo_label_generator.request_logger_filepath=

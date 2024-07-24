@@ -324,7 +324,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     return "d";
             }
         } catch (Exception e) {
-            LOG.warn("Could not resolve sample type acid from 'sampleType' - using default 'd'");
+            LOG.warn("Could not resolve nucleic acid from 'sampleType' - using default 'd'");
         }
         // if nucleic acid abbreviation is still unknown then attempt to resolve from
         // sample metadata --> cmo sample id fields --> naToExtract
@@ -385,8 +385,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not resolve specimen type acid from 'specimenType': "
-                    + specimenTypeValue);
+            LOG.warn("Could not resolve specimen type from 'specimenType': "
+                    + specimenTypeValue + ". Attempting from sample class.");
         }
 
         // if abbreviation is still not resolved then try to resolve from sample class
@@ -402,9 +402,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             // is initialized to default 'F'
         }
 
-        if (sampleTypeAbbreviation == "F") {
+        if (sampleTypeAbbreviation.equalsIgnoreCase("F")) {
             LOG.warn("Could not resolve sample type abbreviation from specimen type,"
-                     + " sample origin, or sample class - using default 'F' ");
+                     + " sample origin, or sample class - using default 'F': (" + specimenTypeValue
+                    + ", " + sampleOriginValue + ", " + cmoSampleClassValue + ")");
         }
         return sampleTypeAbbreviation;
     }
@@ -581,9 +582,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // would be more helpful to have as a reference when debugging the error
         if (!filteredJsonMap.containsKey("status")) {
             allValid = Boolean.FALSE;
-            builder.append("Request JSON missing validation report ('status') post-validation:");
-            builder.append("\nOriginal JSON contents:\n")
-                    .append(originalJson).append("\nFiltered JSON contents:\n")
+            builder.append("[label-generator] Request JSON missing validation report ('status') ");
+            builder.append("post-validation: Original JSON contents: ")
+                    .append(originalJson).append(" Filtered JSON contents: ")
                     .append(filteredJson);
         } else {
             Map<String, Object> statusMap = (Map<String, Object>) filteredJsonMap.get("status");
@@ -593,7 +594,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             // if request validation report is not empty then log for ddog
             if (!validationReport.isEmpty()) {
                 allValid = Boolean.FALSE;
-                builder.append("Request-level status and validation report for request '")
+                builder.append("[label-generator] Request-level status and validation report for request '")
                         .append(requestId)
                         .append("': ")
                         .append(mapper.writeValueAsString(statusMap));
@@ -616,13 +617,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                             sampleMap.get("igoId"), sampleMap.get("primaryId")).toString();
                     if (!sampleValidationReport.isEmpty()) {
                         allValid = Boolean.FALSE;
-                        builder.append("\nValidation report for sample '")
+                        builder.append("\n[label-generator] Validation report for sample '")
                                 .append(sampleId)
                                 .append("': ")
                                 .append(mapper.writeValueAsString(sampleStatusMap));
                     }
                 } catch (NullPointerException e) {
-                    builder.append("\nNo known identifiers in current sample data: ")
+                    builder.append("\n[label-generator] No known identifiers in current sample data: ")
                             .append(mapper.writeValueAsString(sampleMap))
                             .append(", Validation report for unknown sample: ")
                             .append(mapper.writeValueAsString(sampleStatusMap));
