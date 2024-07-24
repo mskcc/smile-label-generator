@@ -145,7 +145,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             }
                         } catch (Exception e) {
                             LOG.error("Error occurred during attempt to publish request "
-                                    + "to destination topic", e);
+                                    + "to destination topic: TOPIC=" + igoRequestDest
+                                    + ", JSON=" + requestJson, e);
                         }
                     }
                     if (interrupted && igoRequestQueue.isEmpty()) {
@@ -392,22 +393,25 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 if (matchingSample.getCmoSampleName().equals(matchingSample.getInvestigatorSampleId())) {
                     return matchingSample.getCmoSampleName();
                 } else {
-                    LOG.error("Falling back on existing cmo sample name for sample.", e);
+                    LOG.error("IllegalStateException thrown. Falling back on existing CMO label for sample: "
+                            + samplePrimaryId, e);
                     return matchingSample.getCmoSampleName();
                 }
             } catch (NullPointerException e2) {
-                LOG.error("NPE caught during label generation check: ", e2);
-                LOG.error("Falling back on existing cmo sample name for sample.");
+                LOG.error("NPE caught during label generation check. Falling back on existing CMO label "
+                        + "name for sample: " + samplePrimaryId, e2);
                 return matchingSample.getCmoSampleName();
             }
             if (!updateRequired) {
-                LOG.info("No change detected for CMO sample label metadata - using "
-                        + "existing CMO label for matching IGO sample from database.");
+                LOG.info("No change detected for CMO sample label metadata. Falling back on "
+                        + "existing CMO label for matching IGO sample from database "
+                        + "for sample: " + samplePrimaryId);
                 return matchingSample.getCmoSampleName();
             }
         }
         LOG.info("Changes detected in CMO sample label metadata - "
-                    + "updating sample CMO label to newly generated label.");
+                    + "updating sample CMO label to newly generated label: "
+                + samplePrimaryId + ", new label: " + newCmoSampleLabel);
         return newCmoSampleLabel;
     }
 
@@ -479,7 +483,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             initializeMessageHandlers();
             initialized = true;
         } else {
-            LOG.error("Messaging Handler Service has already been initialized, ignoring request.\n");
+            LOG.error("Messaging Handler Service has already been initialized, ignoring request.");
         }
     }
 
