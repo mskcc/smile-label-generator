@@ -263,7 +263,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         String updatedRequestJson = mapper.writeValueAsString(requestJsonMap);
                         // data dog log message
                         String ddogLogMessage = cmoLabelGeneratorService.generateValidationReport(
-                                requestJson, updatedRequestJson);
+                                requestJson, updatedRequestJson, Boolean.FALSE);
                         if (ddogLogMessage != null) {
                             LOG.info(ddogLogMessage);
                         }
@@ -347,7 +347,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         String updatedSampleJson = mapper.writeValueAsString(sample);
                         // data dog log message
                         String ddogLogMessage = cmoLabelGeneratorService.generateValidationReport(
-                                origSampleJson, updatedSampleJson);
+                                origSampleJson, updatedSampleJson, Boolean.TRUE);
                         if (ddogLogMessage != null) {
                             LOG.info(ddogLogMessage);
                         }

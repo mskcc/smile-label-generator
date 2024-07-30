@@ -568,7 +568,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     }
 
     @Override
-    public String generateValidationReport(String originalJson, String filteredJson)
+    public String generateValidationReport(String originalJson, String filteredJson, Boolean isSample)
             throws JsonProcessingException {
         StringBuilder builder = new StringBuilder();
         String requestId = getRequestId(originalJson);
@@ -588,48 +588,61 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     .append(filteredJson);
         } else {
             Map<String, Object> statusMap = (Map<String, Object>) filteredJsonMap.get("status");
-            Map<String, Object> validationReport = new HashMap<>();
+            Boolean isEmptyValidationReport = Boolean.FALSE;
             if (!statusMap.get("validationReport").toString().equals("{}")) {
-                validationReport =
-                        mapper.convertValue(statusMap.get("validationReport"), Map.class);
+                isEmptyValidationReport = Boolean.TRUE;
             }
 
             // if request validation report is not empty then log for ddog
-            if (!validationReport.isEmpty()) {
+            if (!isEmptyValidationReport) {
                 allValid = Boolean.FALSE;
-                builder.append("[label-generator] Request-level status and validation report for request '")
-                        .append(requestId)
-                        .append("': ")
-                        .append(mapper.writeValueAsString(statusMap));
-            }
-            // check validation status for each sample individually as well and
-            // add contents to report for ddog
-            Object[] sampleList = mapper.convertValue(filteredJsonMap.get("samples"),
-                Object[].class);
-            for (Object s : sampleList) {
-                Map<String, Object> sampleMap = mapper.convertValue(s, Map.class);
-                Map<String, Object> sampleStatusMap = mapper.convertValue(sampleMap.get("status"), Map.class);
-                Map<String, String> sampleValidationReport = new HashMap<>();
-                if (!sampleStatusMap.get("validationReport").toString().equals("{}")) {
-                    sampleValidationReport =
-                            mapper.convertValue(sampleStatusMap.get("validationReport"), Map.class);
-                }
-
-                try {
+                if (isSample) {
                     String sampleId = ObjectUtils.firstNonNull(
-                            sampleMap.get("igoId"), sampleMap.get("primaryId")).toString();
-                    if (!sampleValidationReport.isEmpty()) {
-                        allValid = Boolean.FALSE;
-                        builder.append("\n[label-generator] Validation report for sample '")
-                                .append(sampleId)
-                                .append("': ")
+                            filteredJsonMap.get("igoId"), filteredJsonMap.get("primaryId")).toString();
+                    builder.append("[label-generator] Validation report for sample '")
+                            .append(sampleId)
+                            .append("': ")
+                            .append(mapper.writeValueAsString(statusMap));
+                } else {
+                    builder.append("[label-generator] Request-level status and validation report ")
+                            .append("for request '")
+                            .append(requestId)
+                            .append("': ")
+                            .append(mapper.writeValueAsString(statusMap));
+                }
+            }
+
+            if (!isSample) {
+                // check validation status for each sample individually as well and
+                // add contents to report for ddog
+                Object[] sampleList = mapper.convertValue(filteredJsonMap.get("samples"),
+                    Object[].class);
+                for (Object s : sampleList) {
+                    Map<String, Object> sampleMap = mapper.convertValue(s, Map.class);
+                    Map<String, Object> sampleStatusMap = mapper.convertValue(sampleMap.get("status"),
+                            Map.class);
+                    Map<String, String> sampleValidationReport = new HashMap<>();
+                    if (!sampleStatusMap.get("validationReport").toString().equals("{}")) {
+                        sampleValidationReport =
+                                mapper.convertValue(sampleStatusMap.get("validationReport"), Map.class);
+                    }
+
+                    try {
+                        String sampleId = ObjectUtils.firstNonNull(
+                                sampleMap.get("igoId"), sampleMap.get("primaryId")).toString();
+                        if (!sampleValidationReport.isEmpty()) {
+                            allValid = Boolean.FALSE;
+                            builder.append("\n[label-generator] Validation report for sample '")
+                                    .append(sampleId)
+                                    .append("': ")
+                                    .append(mapper.writeValueAsString(sampleStatusMap));
+                        }
+                    } catch (NullPointerException e) {
+                        builder.append("\n[label-generator] No known identifiers in current sample data: ")
+                                .append(mapper.writeValueAsString(sampleMap))
+                                .append(", Validation report for unknown sample: ")
                                 .append(mapper.writeValueAsString(sampleStatusMap));
                     }
-                } catch (NullPointerException e) {
-                    builder.append("\n[label-generator] No known identifiers in current sample data: ")
-                            .append(mapper.writeValueAsString(sampleMap))
-                            .append(", Validation report for unknown sample: ")
-                            .append(mapper.writeValueAsString(sampleStatusMap));
                 }
             }
         }
