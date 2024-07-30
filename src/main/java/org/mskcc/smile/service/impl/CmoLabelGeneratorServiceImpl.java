@@ -588,8 +588,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     .append(filteredJson);
         } else {
             Map<String, Object> statusMap = (Map<String, Object>) filteredJsonMap.get("status");
-            Map<String, Object> validationReport =
-                    mapper.convertValue(statusMap.get("validationReport"), Map.class);
+            Map<String, Object> validationReport = new HashMap<>();
+            if (!statusMap.get("validationReport").toString().equals("{}")) {
+                validationReport =
+                        mapper.convertValue(statusMap.get("validationReport"), Map.class);
+            }
 
             // if request validation report is not empty then log for ddog
             if (!validationReport.isEmpty()) {
