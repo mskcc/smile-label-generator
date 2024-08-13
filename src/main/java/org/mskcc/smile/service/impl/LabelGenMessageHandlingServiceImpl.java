@@ -232,8 +232,17 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                 if (newSampleCmoLabel == null) {
                                     sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                                             requestId, sampleManifest, existingSamples);
-                                    LOG.error("Unable to generate CMO sample label for sample: "
+                                    LOG.error("Unable to generate new CMO sample label for sample: "
                                             + sampleManifest.getIgoId());
+                                    // check if we can fall back on an existing cmo label that might have
+                                    // come in with the incoming request json
+                                    if (!StringUtils.isBlank(sampleManifest.getCmoSampleName())) {
+                                        LOG.info("Could not generate new CMO sample label for sample: "
+                                                + sampleManifest.getIgoId()
+                                                + ". Falling back on incoming CMO sample label for sample: "
+                                                + sampleManifest.getCmoSampleName());
+                                        sampleMap.put("cmoSampleName", sampleManifest.getCmoSampleName());
+                                    }
                                 } else {
                                     // check if matching sample found and determine if label actually needs
                                     // updating or if we can use the same label that
@@ -243,7 +252,34 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                     // that may not necessarily affect the cmo label generated
                                     String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(
                                             sampleManifest.getIgoId(), existingSamples, newSampleCmoLabel);
+                                    if (!StringUtils.isBlank(sampleManifest.getCmoSampleName())) {
+                                        // if incomfing sample has an existing cmo label then check
+                                        // if there are any meaningful changes to the metadata that
+                                        // affects the sample type abbreviation or nucleic acid abbreviation
+                                        Boolean hasMeaningfulUpdate =
+                                                cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                                                        newSampleCmoLabel,
+                                                        sampleManifest.getCmoSampleName());
+                                        if (hasMeaningfulUpdate) {
+                                            LOG.warn("Incoming sample manifest has existing CMO label but "
+                                                    + "the label generator indicates that a change to the "
+                                                    + "metadata or updates to the label generation rules has "
+                                                    + "resulted in a new sample type abbreviation or nucleic "
+                                                    + "acid abbreviation: primary id="
+                                                    + sampleManifest.getIgoId()
+                                                    + ", incoming CMO sample label (not using)="
+                                                    + sampleManifest.getCmoSampleName()
+                                                    + ", newly generated CMO label (using)="
+                                                    + newSampleCmoLabel);
+                                        } else {
+                                            LOG.info("Using existing CMO label for incoming sample: "
+                                                + sampleManifest.getIgoId() + ", existing CMO label: "
+                                                + sampleManifest.getCmoSampleName());
+                                            resolvedCmoSampleLabel = sampleManifest.getCmoSampleName();
+                                        }
+                                    }
                                     sampleMap.put("cmoSampleName", resolvedCmoSampleLabel);
+
                                     // update patient sample map and list of updated samples for request
                                     SampleMetadata sampleMetadata = new SampleMetadata(sampleManifest);
                                     sampleMetadata.setStatus(sampleStatus);
