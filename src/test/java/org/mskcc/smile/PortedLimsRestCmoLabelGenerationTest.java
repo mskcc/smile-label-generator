@@ -5,9 +5,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import junit.framework.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mskcc.smile.commons.enums.NucleicAcid;
 import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.config.TestConfiguration;
@@ -15,8 +14,8 @@ import org.mskcc.smile.model.SampleMetadata;
 import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 /**
  * Ported tests from SampleTypeCorrectedCmoSampleViewGeneratorTest.java
@@ -31,8 +30,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * - Each sample has its corresponding request id assigned to it.
  * @author ochoaa
  */
-@ContextConfiguration(classes = TestConfiguration.class)
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest(classes = LabelGeneratorTestApp.class)
+@Import(TestConfiguration.class)
 public class PortedLimsRestCmoLabelGenerationTest {
 
     @Autowired
@@ -56,7 +55,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
 
         String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, new ArrayList<>());
-        Assert.assertEquals("C-1235-X001-d01", cmoId);
+        Assertions.assertEquals("C-1235-X001-d01", cmoId);
     }
 
     /**
@@ -82,7 +81,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
 
         String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assert.assertEquals("C-1235-X002-d02", cmoId);
+        Assertions.assertEquals("C-1235-X002-d02", cmoId);
     }
 
     /**
@@ -110,7 +109,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
 
         String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assert.assertEquals("C-1235-X002-d02", cmoId);
+        Assertions.assertEquals("C-1235-X002-d02", cmoId);
     }
 
     /**
@@ -135,7 +134,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
 
         String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assert.assertEquals("C-1235-X013-d02", cmoId);
+        Assertions.assertEquals("C-1235-X013-d02", cmoId);
     }
 
     /**
@@ -164,7 +163,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         // since nucleic acid abbreviation is different from existing sample, the
         // nucleic acid counter is also '01'
         String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assert.assertEquals("C-1235-X002-r01", cmoId);
+        Assertions.assertEquals("C-1235-X002-r01", cmoId);
     }
 
     /**
@@ -185,7 +184,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample1, new ArrayList<>());
-        Assert.assertEquals("C-1235-X001-d01", cmoId1);
+        Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
         SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
@@ -196,7 +195,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2, existingSamples);
-        Assert.assertEquals("C-1235-X002-d02", cmoId2);
+        Assertions.assertEquals("C-1235-X002-d02", cmoId2);
     }
 
     /**
@@ -217,7 +216,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample1, new ArrayList<>());
-        Assert.assertEquals("C-1235-X001-d01", cmoId1);
+        Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
         SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
@@ -228,7 +227,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.RNA);
         String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2, existingSamples);
-        Assert.assertEquals("C-1235-X002-r01", cmoId2);
+        Assertions.assertEquals("C-1235-X002-r01", cmoId2);
     }
 
     /**
@@ -250,7 +249,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample1, new ArrayList<>());
-        Assert.assertEquals("C-1235-X001-d01", cmoId1);
+        Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
         SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
@@ -262,7 +261,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.PDX, NucleicAcid.DNA);
         String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample2, existingSamples);
-        Assert.assertEquals("C-1235-X002-d02", cmoId2);
+        Assertions.assertEquals("C-1235-X002-d02", cmoId2);
     }
 
     /**
@@ -283,7 +282,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.ORGANOID, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample1, new ArrayList<>());
-        Assert.assertEquals("C-1235-G001-d01", cmoId1);
+        Assertions.assertEquals("C-1235-G001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
         SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
@@ -295,7 +294,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.ORGANOID, NucleicAcid.DNA);
         String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample2, existingSamples);
-        Assert.assertEquals("C-1235-G002-d02", cmoId2);
+        Assertions.assertEquals("C-1235-G002-d02", cmoId2);
     }
 
     /**
@@ -332,10 +331,10 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 updatedSample, existingSamples);
         // confirm that the label generated would still increment even though it will
         // be determined that the sample cmo label does NOT need to be updated for this sample
-        Assert.assertEquals("C-1235-G001-d03", updatedCmoLabel);
+        Assertions.assertEquals("C-1235-G001-d03", updatedCmoLabel);
         Boolean needsUpdates =
                 cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
-        Assert.assertFalse(needsUpdates);
+        Assertions.assertFalse(needsUpdates);
     }
 
     /**
@@ -367,9 +366,9 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.ORGANOID, NucleicAcid.RNA);
         String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 updatedSample, existingSamples);
-        Assert.assertEquals("C-1235-G001-r01", updatedCmoLabel);
+        Assertions.assertEquals("C-1235-G001-r01", updatedCmoLabel);
         Boolean needsUpdates = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
-        Assert.assertTrue(needsUpdates);
+        Assertions.assertTrue(needsUpdates);
     }
 
     /**
@@ -379,7 +378,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
     @Test
     public void testRequiresUpdateWhenExistingLabelIsEmpty() throws Exception {
         Boolean needsUpdates1 = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate("C-1235-G001-d01", "");
-        Assert.assertTrue(needsUpdates1);
+        Assertions.assertTrue(needsUpdates1);
     }
 
     private SampleMetadata getSampleMetadataWithCmoLabel(String igoId, String cmoPatientId,

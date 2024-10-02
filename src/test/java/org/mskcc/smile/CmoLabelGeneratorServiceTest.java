@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import junit.framework.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mskcc.smile.commons.enums.NucleicAcid;
 import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.config.TestConfiguration;
@@ -19,13 +18,11 @@ import org.mskcc.smile.model.Status;
 import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
-@ContextConfiguration(classes = TestConfiguration.class)
-@RunWith(SpringJUnit4ClassRunner.class)
-@ComponentScan("org.mskcc.smile.service")
+@SpringBootTest(classes = LabelGeneratorTestApp.class)
+@Import(TestConfiguration.class)
 public class CmoLabelGeneratorServiceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -40,7 +37,7 @@ public class CmoLabelGeneratorServiceTest {
      */
     @Test
     public void testMockedRequestJsonDataLoading() {
-        Assert.assertNotNull(mockedRequestJsonDataMap);
+        Assertions.assertNotNull(mockedRequestJsonDataMap);
     }
 
     /**
@@ -52,7 +49,7 @@ public class CmoLabelGeneratorServiceTest {
         MockJsonTestData requestJson = mockedRequestJsonDataMap
                 .get("mockIncomingRequest1JsonDataWith2T2N");
         String modifiedRequestJson = requestJson.getJsonString();
-        Assert.assertNotNull(modifiedRequestJson);
+        Assertions.assertNotNull(modifiedRequestJson);
     }
 
     /**
@@ -89,12 +86,12 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
         // if the cmo label before the update is C-MP789JR-X001-d
-        Assert.assertEquals("C-MP789JR-P003-d02", newCmoLabel);
+        Assertions.assertEquals("C-MP789JR-P003-d02", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
-        Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
-        Assert.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
+        Assertions.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
+        Assertions.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     /**
@@ -135,12 +132,12 @@ public class CmoLabelGeneratorServiceTest {
                 updatedSample, existingSamples);
 
         // if the cmo label before the update is C-MP789JR-X001-d
-        Assert.assertEquals("C-newPatient-X003-d02", newCmoLabel);
+        Assertions.assertEquals("C-newPatient-X003-d02", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
-        Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
-        Assert.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
+        Assertions.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
+        Assertions.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     /**
@@ -180,13 +177,13 @@ public class CmoLabelGeneratorServiceTest {
                 updatedSample, existingSamples);
 
         // if the cmo label before the update is C-MP789JR-X001-d
-        Assert.assertEquals("C-newPatient-X001-d02", newCmoLabel);
+        Assertions.assertEquals("C-newPatient-X001-d02", newCmoLabel);
 
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
-        Assert.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
-        Assert.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
+        Assertions.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
+        Assertions.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     /**
@@ -226,12 +223,12 @@ public class CmoLabelGeneratorServiceTest {
         // should return null string
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples);
-        Assert.assertEquals("C-MP789JR-F001-d01", newCmoLabel);
+        Assertions.assertEquals("C-MP789JR-F001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
-        Assert.assertEquals(Boolean.FALSE, sampleStatus.getValidationStatus());
-        Assert.assertNotSame(sampleStatus.getValidationReport(), (new HashMap()).toString());
+        Assertions.assertEquals(Boolean.FALSE, sampleStatus.getValidationStatus());
+        Assertions.assertNotSame(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
 
     @Test
@@ -245,7 +242,7 @@ public class CmoLabelGeneratorServiceTest {
         String sampleLabel =  cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sample, existingSamples);
         String sampleExpectedLabel = "AMP1-86793T";
-        Assert.assertEquals("AMP1-86793T", sampleLabel);
+        Assertions.assertEquals("AMP1-86793T", sampleLabel);
 
         // test label generated with new investigator id and assert
         // that the sample would require a label update
@@ -254,9 +251,9 @@ public class CmoLabelGeneratorServiceTest {
         String sampleUpdatedInvestigatorIdLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sampleUpdatedInvestigatorId, existingSamples);
         String expectedLabelWithInvestiagorIdUpdate = "MIP2-86793T";
-        Assert.assertEquals(expectedLabelWithInvestiagorIdUpdate, sampleUpdatedInvestigatorIdLabel);
+        Assertions.assertEquals(expectedLabelWithInvestiagorIdUpdate, sampleUpdatedInvestigatorIdLabel);
         // assert that the sample would require a label update
-        Assert.assertTrue(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+        Assertions.assertTrue(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
                 sampleUpdatedInvestigatorIdLabel, sampleLabel));
 
         // test label generated with same investigator id as original sample
@@ -265,8 +262,8 @@ public class CmoLabelGeneratorServiceTest {
                 SpecimenType.CELLLINE, NucleicAcid.CFDNA, "AMP1");
         String sampleUpdatedNaExtractLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 sampleUpdatedNaExtract, existingSamples);
-        Assert.assertEquals(sampleExpectedLabel, sampleUpdatedNaExtractLabel);
-        Assert.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+        Assertions.assertEquals(sampleExpectedLabel, sampleUpdatedNaExtractLabel);
+        Assertions.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
                 sampleUpdatedNaExtractLabel, sampleExpectedLabel));
     }
 
@@ -274,7 +271,7 @@ public class CmoLabelGeneratorServiceTest {
     public void testDefaultSampleTypeAbbreviation() {
         String sampleTypeAbbrev = cmoLabelGeneratorService.resolveSampleTypeAbbreviation("RapidAutopsy",
                 "Cerebrospinal Fluid", "Other");
-        Assert.assertTrue(sampleTypeAbbrev.equals("F"));
+        Assertions.assertTrue(sampleTypeAbbrev.equals("F"));
     }
 
     private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
