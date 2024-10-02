@@ -11,7 +11,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.3.3.RELEASE</version>
+    <version>3.3.3</version>
   </parent>
 
   <repositories>
@@ -29,21 +29,20 @@
   </pluginRepositories>
 
   <properties>
-    <java.version>1.8</java.version>
-    <maven.compiler.version>1.8</maven.compiler.version>
-    <spring.version>5.2.6.RELEASE</spring.version>
-    <spring.boot.version>2.3.3.RELEASE</spring.boot.version>
-    <slf4j.version>1.7.30</slf4j.version>
-    <jackson.version>2.11.2</jackson.version>
+    <java.version>21</java.version>
+    <maven.compiler.version>3.11.0</maven.compiler.version>
+    <spring.version>6.1.12</spring.version>
+    <spring.boot.version>3.3.3</spring.boot.version>
+    <jackson.version>2.17.2</jackson.version>
     <!-- smile messaging and shared entities dependency versions -->
     <smile_messaging_java.group>com.github.mskcc</smile_messaging_java.group>
-    <smile_messaging_java.version>1.4.1.RELEASE</smile_messaging_java.version>
+    <smile_messaging_java.version>java-v21-beta-2</smile_messaging_java.version>
     <!-- smile commons centralized config properties -->
     <smile_commons.group>com.github.mskcc</smile_commons.group>
-    <smile_commons.version>1.4.1.RELEASE</smile_commons.version>
+    <smile_commons.version>java-v21-beta-2</smile_commons.version>
     <!-- smile server model module -->
     <smile_server.group>com.github.mskcc.smile-server</smile_server.group>
-    <smile_server.version>1.6.0.RELEASE</smile_server.version>
+    <smile_server.version>java-v21-beta-2</smile_server.version>
   </properties>
 
   <dependencies>
@@ -99,19 +98,7 @@
     <dependency>
       <groupId>org.skyscreamer</groupId>
       <artifactId>jsonassert</artifactId>
-      <version>1.5.0</version>
-    </dependency>
-    <!-- string utils -->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>19.0</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.11</version>
+      <version>1.5.3</version>
     </dependency>
   </dependencies>
 
@@ -144,10 +131,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.6.1</version>
+        <version>${maven.compiler.version}</version>
         <configuration>
-          <source>${maven.compiler.version}</source>
-          <target>${maven.compiler.version}</target>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
           <compilerArgument>-Xlint:deprecation</compilerArgument>
         </configuration>
       </plugin>
