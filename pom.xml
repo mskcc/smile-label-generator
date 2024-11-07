@@ -42,7 +42,7 @@
     <smile_commons.version>java-v21-beta-2</smile_commons.version>
     <!-- smile server model module -->
     <smile_server.group>com.github.mskcc.smile-server</smile_server.group>
-    <smile_server.version>java-v21-beta-2</smile_server.version>
+    <smile_server.version>java-v21-beta-4</smile_server.version>
   </properties>
 
   <dependencies>
