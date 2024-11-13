@@ -32,13 +32,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingService {
 
-    @Value("${request_reply.cmo_label_generator_topic}")
+    @Value("${request_reply.cmo_label_generator_topic:}")
     private String CMO_LABEL_GENERATOR_REQREPLY_TOPIC;
 
-    @Value("${request_reply.patient_samples_topic}")
+    @Value("${request_reply.patient_samples_topic:}")
     private String PATIENT_SAMPLES_REQUEST_TOPIC;
 
-    @Value("${num.new_request_handler_threads}")
+    @Value("${num.new_request_handler_threads:1}")
     private int NUM_NEW_REQUEST_HANDLERS;
 
     @Autowired
