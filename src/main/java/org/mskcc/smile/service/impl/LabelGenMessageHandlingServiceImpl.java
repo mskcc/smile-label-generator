@@ -39,31 +39,31 @@ import org.springframework.stereotype.Service;
 @Service
 public class LabelGenMessageHandlingServiceImpl implements MessageHandlingService {
 
-    @Value("${igo.cmo_label_generator_topic}")
+    @Value("${igo.cmo_label_generator_topic:}")
     private String CMO_LABEL_GENERATOR_TOPIC;
 
-    @Value("${igo.cmo_promoted_label_topic}")
+    @Value("${igo.cmo_promoted_label_topic:}")
     private String CMO_PROMOTED_LABEL_TOPIC;
 
-    @Value("${igo.new_request_topic}")
+    @Value("${igo.new_request_topic:}")
     private String IGO_NEW_REQUEST_TOPIC;
 
-    @Value("${igo.promoted_request_topic}")
+    @Value("${igo.promoted_request_topic:}")
     private String IGO_PROMOTED_REQUEST_TOPIC;
 
-    @Value("${igo.cmo_sample_label_update_topic}")
+    @Value("${igo.cmo_sample_label_update_topic:}")
     private String CMO_LABEL_UPDATE_TOPIC;
 
-    @Value("${smile.sample_update_topic}")
+    @Value("${smile.sample_update_topic:}")
     private String IGO_SAMPLE_UPDATE_TOPIC;
 
-    @Value("${num.new_request_handler_threads}")
+    @Value("${num.new_request_handler_threads:1}")
     private int NUM_NEW_REQUEST_HANDLERS;
 
-    @Value("${num.promoted_request_handler_threads}")
+    @Value("${num.promoted_request_handler_threads:1}")
     private int NUM_PROMOTED_REQUEST_HANDLERS;
 
-    @Value("${request_reply.patient_samples_topic}")
+    @Value("${request_reply.patient_samples_topic:}")
     private String PATIENT_SAMPLES_REQUEST_TOPIC;
 
     @Autowired
