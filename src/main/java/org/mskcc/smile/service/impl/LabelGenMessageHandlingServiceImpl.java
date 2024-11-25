@@ -66,6 +66,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     @Value("${request_reply.patient_samples_topic:}")
     private String PATIENT_SAMPLES_REQUEST_TOPIC;
 
+    @Value("${request_reply.samples_by_cmo_label_topic}")
+    private String SAMPLES_BY_CMO_LABEL_REQREPLY_TOPIC;
+
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
 
@@ -272,10 +275,25 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                                     + ", newly generated CMO label (using)="
                                                     + newSampleCmoLabel);
                                         } else {
-                                            LOG.info("Using existing CMO label for incoming sample: "
-                                                + sampleManifest.getIgoId() + ", existing CMO label: "
-                                                + sampleManifest.getCmoSampleName());
-                                            resolvedCmoSampleLabel = sampleManifest.getCmoSampleName();
+                                            // before settling on using the provided cmo label from the
+                                            // incoming sample check if that label already exists in smile
+                                            // for another sample
+                                            if (isCmoLabelAlreadyInUse(sampleManifest.getIgoId(),
+                                                    sampleManifest.getCmoSampleName())) {
+                                                LOG.info("Incoming sample: " + sampleManifest.getIgoId()
+                                                        + " sample manifest contains an existing CMO label: "
+                                                        + sampleManifest.getCmoSampleName() + " that is "
+                                                        + "already in use by another sample in SMILE. To "
+                                                        + "prevent duplicate labels from getting persisted "
+                                                        + "into SMILE, the new label generated will be used "
+                                                        + "instead: " + newSampleCmoLabel);
+                                                resolvedCmoSampleLabel = newSampleCmoLabel;
+                                            } else {
+                                                LOG.info("Using existing CMO label for incoming sample: "
+                                                    + sampleManifest.getIgoId() + ", existing CMO label: "
+                                                    + sampleManifest.getCmoSampleName());
+                                                resolvedCmoSampleLabel = sampleManifest.getCmoSampleName();
+                                            }
                                         }
                                     }
                                     sampleMap.put("cmoSampleName", resolvedCmoSampleLabel);
@@ -378,6 +396,51 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             // necessarily affect the cmo label generated
                             String resolvedCmoSampleLabel = resolveAndUpdateCmoSampleLabel(
                                     sample.getPrimaryId(), existingSamples, newCmoSampleLabel);
+
+                            // if existing cmo label isn't blank then determine if the update is a meaningful
+                            // update with respect to the sample metadata
+                            if (!StringUtils.isBlank(sample.getCmoSampleName())) {
+                                // if incoming updated sample has an existing cmo label then check
+                                // if there are any meaningful changes to the metadata that
+                                // affects the sample type abbreviation or nucleic acid abbreviation
+                                Boolean hasMeaningfulUpdate =
+                                        cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                                                newCmoSampleLabel,
+                                                sample.getCmoSampleName());
+                                if (hasMeaningfulUpdate) {
+                                    LOG.warn("Incoming updated sample has existing CMO label but "
+                                            + "the label generator indicates that a change to the "
+                                            + "metadata or updates to the label generation rules has "
+                                            + "resulted in a new sample type abbreviation or nucleic "
+                                            + "acid abbreviation: primary id="
+                                            + sample.getPrimaryId()
+                                            + ", incoming CMO sample label (not using)="
+                                            + sample.getCmoSampleName()
+                                            + ", newly generated CMO label (using)="
+                                            + newCmoSampleLabel);
+                                } else {
+                                    // before settling on using the provided cmo label from the
+                                    // incoming sample check if that label already exists in smile
+                                    // for another sample
+                                    if (isCmoLabelAlreadyInUse(sample.getPrimaryId(),
+                                            resolvedCmoSampleLabel)) {
+                                        LOG.info("Incoming updated sample: " + sample.getPrimaryId()
+                                                + " sample metadata has a resolved CMO label: "
+                                                + resolvedCmoSampleLabel + " that is "
+                                                + "already in use by another sample in SMILE. To "
+                                                + "prevent duplicate labels from getting persisted "
+                                                + "into SMILE, the new label generated will be used "
+                                                + "instead: " + newCmoSampleLabel);
+                                        resolvedCmoSampleLabel = newCmoSampleLabel;
+                                    } else {
+                                        LOG.info("Using existing CMO label for incoming sample: "
+                                            + sample.getPrimaryId() + ", existing CMO label: "
+                                            + sample.getCmoSampleName());
+                                        resolvedCmoSampleLabel = sample.getCmoSampleName();
+                                    }
+                                }
+                            }
+                            // update the sample label for data being sent to smile server
                             sample.setCmoSampleName(resolvedCmoSampleLabel);
                         }
                         String updatedSampleJson = mapper.writeValueAsString(sample);
@@ -493,6 +556,28 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 new String(reply.getData(), StandardCharsets.UTF_8),
                 SampleMetadata[].class);
         return new ArrayList<>(Arrays.asList(ptSamples));
+    }
+
+    private List<SampleMetadata> getSamplesByCmoLabel(String cmoLabel) throws Exception {
+        Message reply = messagingGateway.request(SAMPLES_BY_CMO_LABEL_REQREPLY_TOPIC,
+                    cmoLabel);
+        SampleMetadata[] samplesByCmoLabel = mapper.readValue(
+                new String(reply.getData(), StandardCharsets.UTF_8),
+                SampleMetadata[].class);
+        return new ArrayList<>(Arrays.asList(samplesByCmoLabel));
+    }
+
+    private Boolean isCmoLabelAlreadyInUse(String primaryId, String cmoLabel) throws Exception {
+        List<SampleMetadata> samplesByCmoLabel = getSamplesByCmoLabel(cmoLabel);
+        for (SampleMetadata sm : samplesByCmoLabel) {
+            // if there are any samples returned that aren't the same primary id
+            // as the one provided then that indicates that the cmo label already exists
+            // in smile and is associated with a different sample
+            if (!sm.getPrimaryId().equals(primaryId)) {
+                return Boolean.TRUE;
+            }
+        }
+        return Boolean.FALSE;
     }
 
     private String getRequestIdFromRequestJson(String requestJson) throws JsonProcessingException {
