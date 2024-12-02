@@ -623,8 +623,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                             Map.class);
                     Map<String, String> sampleValidationReport = new HashMap<>();
                     if (!sampleStatusMap.get("validationReport").toString().equals("{}")) {
-                        sampleValidationReport =
-                                mapper.convertValue(sampleStatusMap.get("validationReport"), Map.class);
+                        sampleValidationReport = mapper.readValue(
+                                sampleStatusMap.get("validationReport").toString(), Map.class);
                     }
 
                     try {
