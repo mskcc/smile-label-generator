@@ -23,4 +23,5 @@ public interface CmoLabelGeneratorService {
             String cmoSampleClassValue);
     String generateValidationReport(String originalJson, String filteredJson, Boolean isSample)
             throws JsonProcessingException;
+    String incrementNucleicAcidCounter(String cmoLabel);
 }

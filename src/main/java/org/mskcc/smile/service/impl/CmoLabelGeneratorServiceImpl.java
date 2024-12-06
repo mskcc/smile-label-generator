@@ -682,4 +682,35 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     private Boolean isBlank(String value) {
         return (Strings.isBlank(value) || value.equals("null"));
     }
+
+    @Override
+    public String incrementNucleicAcidCounter(String cmoLabel) {
+        Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(cmoLabel);
+        // first make sure that we are dealing with a "C-" style label
+        if (!matcher.find()) {
+            return null;
+        }
+
+        // parse the nucleic acid counter group
+        Integer nucAcidIncrement;
+        if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
+                || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
+            nucAcidIncrement = 1;
+        } else {
+            nucAcidIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+        }
+        // we only call this function when the nuc acid counter needs to be incremented
+        nucAcidIncrement++;
+        String paddedNucAcidCounter = getPaddedIncrementString(nucAcidIncrement,
+                CMO_SAMPLE_NUCACID_COUNTER_PADDING);
+
+        // everything else in the label can remain as is
+        String patientId = "C-" + matcher.group(CMO_PATIENT_ID_GROUP);
+        String sampleTypeAbbreviation = matcher.group(CMO_SAMPLE_TYPE_ABBREV_GROUP);
+        String paddedSampleCounter = matcher.group(CMO_SAMPLE_COUNTER_GROUP);
+        String nucleicAcidAbbreviation = matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP);
+
+        return getFormattedCmoSampleLabel(patientId, sampleTypeAbbreviation, paddedSampleCounter,
+                nucleicAcidAbbreviation, paddedNucAcidCounter);
+    }
 }
