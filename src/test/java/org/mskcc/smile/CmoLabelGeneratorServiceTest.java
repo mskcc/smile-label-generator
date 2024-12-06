@@ -274,6 +274,30 @@ public class CmoLabelGeneratorServiceTest {
         Assertions.assertTrue(sampleTypeAbbrev.equals("F"));
     }
 
+    /**
+     * Tests the behavior of the nucleic acid increment method.
+     * @throws Exception
+     */
+    @Test
+    public void testIncrementNucleicAcidCounter() throws Exception {
+        // test label increment when nuc acid counter isn't present
+        String legacyLabel = "C-MP789JR-F001-d";
+        String expectedIncrementLegacy = "C-MP789JR-F001-d02";
+        String actualIncrementLegacy = cmoLabelGeneratorService.incrementNucleicAcidCounter(legacyLabel);
+        Assertions.assertEquals(expectedIncrementLegacy, actualIncrementLegacy);
+
+        // test increment with a non-legacy label
+        String inputLabel = "C-MP789JR-F001-d01";
+        String expectedLabel = "C-MP789JR-F001-d02";
+        String actualLabel = cmoLabelGeneratorService.incrementNucleicAcidCounter(inputLabel);
+        Assertions.assertEquals(expectedLabel, actualLabel);
+
+        // test another increment
+        String nextExpectedLabel = "C-MP789JR-F001-d03";
+        String nextActualLabel = cmoLabelGeneratorService.incrementNucleicAcidCounter(expectedLabel);
+        Assertions.assertEquals(nextExpectedLabel, nextActualLabel);
+    }
+
     private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
             SpecimenType specimenType, NucleicAcid naToExtract, String investigatorSampleId) {
         IgoSampleManifest sample = new IgoSampleManifest();
