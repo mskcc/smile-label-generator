@@ -2,6 +2,7 @@ package org.mskcc.smile.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -166,7 +167,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
     @Override
     public String generateCmoSampleLabel(String requestId, IgoSampleManifest sampleManifest,
-            List<SampleMetadata> existingSamples) {
+            List<SampleMetadata> existingSamples, List<SampleMetadata> samplesByAltId) {
         // if sample is a cellline sample then generate a cmo cellline label
         if (isCmoCelllineSample(sampleManifest)) {
             return generateCmoCelllineSampleLabel(requestId, sampleManifest.getInvestigatorSampleId());
@@ -176,7 +177,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleManifest);
 
         // resolve the sample counter value to use for the cmo label
-        Integer sampleCounter =  resolveSampleIncrementValue(sampleManifest.getIgoId(), existingSamples);
+        Integer sampleCounter =  resolveSampleIncrementValue(sampleManifest.getIgoId(),
+                existingSamples, samplesByAltId);
         String paddedSampleCounter = getPaddedIncrementString(sampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -200,7 +202,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
     @Override
     public String generateCmoSampleLabel(SampleMetadata sampleMetadata,
-            List<SampleMetadata> existingSamples) {
+            List<SampleMetadata> existingSamples, List<SampleMetadata> samplesByAltId) {
         // if sample is a cellline sample then generate a cmo cellline label
         if (isCmoCelllineSample(sampleMetadata.getSampleClass(), sampleMetadata.getCmoSampleIdFields())) {
             return generateCmoCelllineSampleLabel(sampleMetadata.getIgoRequestId(),
@@ -218,7 +220,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
 
         // resolve the sample counter value to use for the cmo label
-        Integer sampleCounter =  resolveSampleIncrementValue(sampleMetadata.getPrimaryId(), existingSamples);
+        Integer sampleCounter =  resolveSampleIncrementValue(sampleMetadata.getPrimaryId(),
+                existingSamples, samplesByAltId);
         String paddedSampleCounter = getPaddedIncrementString(sampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -437,7 +440,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @param existingSamples
      * @return Integer
      */
-    private Integer resolveSampleIncrementValue(String primaryId, List<SampleMetadata> existingSamples) {
+    private Integer resolveSampleIncrementValue(String primaryId, List<SampleMetadata> existingSamples,
+            List<SampleMetadata> samplesByAltId) {
         if (existingSamples.isEmpty()) {
             return 1;
         }
@@ -454,8 +458,30 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             }
         }
 
-        // assuming that a match by the primary id has not been identified
-        // then we can use the next sample increment logic like before
+        // if match isn't found by primary id then attempt to resolve count by checking increments
+        // of samples with matching alt ids
+        // TODO decide how to handle cases where the same alt id is associated with
+        // more than one sample counter
+        if (!samplesByAltId.isEmpty()) {
+            List<Integer> altIdSampleCounters = new ArrayList<>();
+            for (SampleMetadata sample : samplesByAltId) {
+                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+                if (matcher.find()) {
+                    Integer increment = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                    altIdSampleCounters.add(increment);
+                }
+            }
+            if (altIdSampleCounters.size() == 1) {
+                return altIdSampleCounters.get(0);
+            } else {
+                // decide whether to use max or min counter associated with the alt id...
+
+            }
+        }
+
+        // if there aren't any existing samples by the same alt id then this is a new sample specimen for the
+        // current patient so the sample increment for the sample cmo label will be based on number of other
+        // existing patient samples
         return getNextSampleIncrement(existingSamples);
     }
 

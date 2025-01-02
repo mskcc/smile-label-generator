@@ -26,6 +26,9 @@ import org.springframework.context.annotation.Import;
 public class CmoLabelGeneratorServiceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
+    // setting as empty for now until alt id is fully supported
+    List<SampleMetadata> SAMPLES_BY_ALT_ID = new ArrayList<>();
+
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
 
@@ -84,7 +87,7 @@ public class CmoLabelGeneratorServiceTest {
 
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
         // if the cmo label before the update is C-MP789JR-X001-d
         Assertions.assertEquals("C-MP789JR-P003-d02", newCmoLabel);
 
@@ -129,7 +132,7 @@ public class CmoLabelGeneratorServiceTest {
 
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
 
         // if the cmo label before the update is C-MP789JR-X001-d
         Assertions.assertEquals("C-newPatient-X003-d02", newCmoLabel);
@@ -174,7 +177,7 @@ public class CmoLabelGeneratorServiceTest {
 
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
 
         // if the cmo label before the update is C-MP789JR-X001-d
         Assertions.assertEquals("C-newPatient-X001-d02", newCmoLabel);
@@ -222,7 +225,7 @@ public class CmoLabelGeneratorServiceTest {
         // generate cmoLabel for sample with spec type (sample type) = other
         // should return null string
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-MP789JR-F001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
@@ -240,7 +243,7 @@ public class CmoLabelGeneratorServiceTest {
         IgoSampleManifest sample = getSampleMetadata("86793_T_4", "C-76767",
                 SpecimenType.CELLLINE, NucleicAcid.DNA, "AMP1");
         String sampleLabel =  cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample, existingSamples);
+                sample, existingSamples, SAMPLES_BY_ALT_ID);
         String sampleExpectedLabel = "AMP1-86793T";
         Assertions.assertEquals("AMP1-86793T", sampleLabel);
 
@@ -249,7 +252,7 @@ public class CmoLabelGeneratorServiceTest {
         IgoSampleManifest sampleUpdatedInvestigatorId = getSampleMetadata("86793_T_4", "C-76767",
                 SpecimenType.CELLLINE, NucleicAcid.DNA, "MIP2");
         String sampleUpdatedInvestigatorIdLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sampleUpdatedInvestigatorId, existingSamples);
+                sampleUpdatedInvestigatorId, existingSamples, SAMPLES_BY_ALT_ID);
         String expectedLabelWithInvestiagorIdUpdate = "MIP2-86793T";
         Assertions.assertEquals(expectedLabelWithInvestiagorIdUpdate, sampleUpdatedInvestigatorIdLabel);
         // assert that the sample would require a label update
@@ -261,7 +264,7 @@ public class CmoLabelGeneratorServiceTest {
         IgoSampleManifest sampleUpdatedNaExtract = getSampleMetadata("86793_T_4", "C-76767",
                 SpecimenType.CELLLINE, NucleicAcid.CFDNA, "AMP1");
         String sampleUpdatedNaExtractLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sampleUpdatedNaExtract, existingSamples);
+                sampleUpdatedNaExtract, existingSamples, SAMPLES_BY_ALT_ID);
         Assertions.assertEquals(sampleExpectedLabel, sampleUpdatedNaExtractLabel);
         Assertions.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
                 sampleUpdatedNaExtractLabel, sampleExpectedLabel));
