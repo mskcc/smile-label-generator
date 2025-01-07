@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -190,7 +191,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return null;
         }
         // get next increment for nucleic acid abbreviation
-        Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
+        Integer nextNucAcidCounter = getNextNucleicAcidIncrement(sampleManifest.getIgoId(),
+                nucleicAcidAbbreviation, existingSamples, samplesByAltId);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
@@ -237,7 +239,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return null;
         }
         // get next increment for nucleic acid abbreviation
-        Integer nextNucAcidCounter = getNextNucleicAcidIncrement(nucleicAcidAbbreviation, existingSamples);
+        Integer nextNucAcidCounter = getNextNucleicAcidIncrement(sampleMetadata.getPrimaryId(),
+                nucleicAcidAbbreviation, existingSamples, samplesByAltId);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
@@ -475,7 +478,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 return altIdSampleCounters.get(0);
             } else {
                 // decide whether to use max or min counter associated with the alt id...
-
+                return Collections.max(altIdSampleCounters);
             }
         }
 
@@ -525,39 +528,38 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * from 01-99 (values less < 10 are filled in with zeros '0' to preserve 2-digit format).
      * From the time of implementation the first sample for a particular Nucleic Acid get 01.
      * @param nucleicAcidAbbreviation
-     * @param samples
+     * @param existingSamples
      * @return Integer
      */
-    private Integer getNextNucleicAcidIncrement(String nucleicAcidAbbreviation,
-            List<SampleMetadata> samples) {
-        if (samples.isEmpty()) {
+    private Integer getNextNucleicAcidIncrement(String primaryId, String nucleicAcidAbbreviation,
+            List<SampleMetadata> existingSamples, List<SampleMetadata> samplesByAltId) {
+        if (existingSamples.isEmpty() && samplesByAltId.isEmpty()) {
             return 1;
         }
-        // otherwise extract the max counter from the current set of samples
-        // do not rely on the size of the list having the exact same counter
-        // to prevent accidentally giving samples the same counter
-        Integer maxIncrement = 0;
-        for (SampleMetadata sample : samples) {
-            // skip samples with null cmo sample name (possible now that we allow all samples to get in db
-            // even if they fail validation and/or fail label generation)
-            if (StringUtils.isBlank(sample.getCmoSampleName())) {
-                LOG.warn("Skipping patient sample with null CMO sample label: CMO patient ID = "
-                        + sample.getCmoPatientId() + ", sample primary ID = " + sample.getPrimaryId());
-                continue;
-            }
-            // skip cell line samples
-            if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
-                continue;
-            }
-            Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
-            // increment assigned to the current sample is in group 3 of matcher
-            if (matcher.find()) {
-                // nucleic acid abbreviation determines which counters we consider
-                // when iterating through sample list
-                if (!matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP)
-                        .equalsIgnoreCase(nucleicAcidAbbreviation)) {
+
+        if (!samplesByAltId.isEmpty()) {
+            Integer maxIncrement = 0;
+            for (SampleMetadata sample : samplesByAltId) {
+                // ignore samples with empty cmo sample labels
+                if (StringUtils.isBlank(sample.getCmoSampleName())) {
                     continue;
                 }
+                // skip cell line samples as well
+                if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
+                    continue;
+                }
+
+                // if sample cmo label does not meet matcher criteria then skip
+                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+                if (!matcher.find()) {
+                    continue;
+                }
+
+                String currentNucAcidAbbreviation = matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP);
+                if (!currentNucAcidAbbreviation.equals(nucleicAcidAbbreviation)) {
+                    continue;
+                }
+
                 Integer currentIncrement;
                 if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
                         || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
@@ -565,9 +567,76 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 } else {
                     currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
                 }
+
+                // if primary id match is found then we know that this sample isn't actually being
+                // reprocessed and likely received some other metadata update that should not affect
+                // the label generation as far as the nuc acid counter is concerned
+                if (sample.getPrimaryId().equals(primaryId)) {
+                    return currentIncrement;
+                }
+
+                // update max increment if needed
                 if (currentIncrement > maxIncrement) {
                     maxIncrement = currentIncrement;
                 }
+            }
+            // assuming that this sample primary id does not already exist in the list of samples matching
+            // the same alt id means that we should use the max increment found + 1
+            return maxIncrement + 1;
+        }
+
+        // handle cases where alt ID hasn't been backfilled yet or maybe it's the first time
+        // that this alt ID will be appearing in the database
+
+        // otherwise extract the max counter from the current set of samples
+        // do not rely on the size of the list having the exact same counter
+        // to prevent accidentally giving samples the same counter
+        Integer maxIncrement = 0;
+        for (SampleMetadata sample : existingSamples) {
+            // skip samples with null cmo sample name (possible now that we allow all samples to get in db
+            // even if they fail validation and/or fail label generation)
+            if (StringUtils.isBlank(sample.getCmoSampleName())) {
+                continue;
+            }
+            // skip cell line samples
+            if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
+                continue;
+            }
+
+            Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+
+            // if label doesn't match the cmo label regex pattern then skip
+            if (!matcher.find()) {
+                continue;
+            }
+            // increment assigned to the current sample is in group 3 of matcher
+            // nucleic acid abbreviation determines which counters we consider
+
+            // when iterating through sample list if nuc acid doesn't match then move
+            // on to the next one
+            if (!matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP)
+                    .equalsIgnoreCase(nucleicAcidAbbreviation)) {
+                continue;
+            }
+
+            Integer currentIncrement;
+            if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
+                    || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
+                currentIncrement = 1;
+            } else {
+                currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+            }
+
+            // if primary id match is found then we know that this sample isn't actually being
+            // reprocessed and likely received some other metadata update that should not affect
+            // the label generation as far as the nuc acid counter is concerned
+            if (sample.getPrimaryId().equals(primaryId)) {
+                return currentIncrement;
+            }
+
+            // update max increment if needed
+            if (currentIncrement > maxIncrement) {
+                maxIncrement = currentIncrement;
             }
         }
         return maxIncrement + 1;

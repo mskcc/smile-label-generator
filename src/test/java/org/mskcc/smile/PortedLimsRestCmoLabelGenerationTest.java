@@ -338,9 +338,13 @@ public class PortedLimsRestCmoLabelGenerationTest {
                 SpecimenType.ORGANOID, NucleicAcid.DNA);
         String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
                 updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
+
+        // NOTE: now that the nucleic acid counter doesn't increment for unless it's
+        // another sample of the same alt id, the 'updatedCmoLabel' returned should
+        // have a nuc acid counter of 01
         // confirm that the label generated would still increment even though it will
         // be determined that the sample cmo label does NOT need to be updated for this sample
-        Assertions.assertEquals("C-1235-G001-d03", updatedCmoLabel);
+        Assertions.assertEquals("C-1235-G001-d01", updatedCmoLabel);
         Boolean needsUpdates =
                 cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assertions.assertFalse(needsUpdates);

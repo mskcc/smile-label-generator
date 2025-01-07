@@ -179,9 +179,12 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
 
-        // if the cmo label before the update is C-MP789JR-X001-d
-        Assertions.assertEquals("C-newPatient-X001-d02", newCmoLabel);
+        // NOTE: now that the nucleic acid counter doesn't increment for unless it's
+        // another sample of the same alt id, the 'updatedCmoLabel' returned should
+        // have a nuc acid counter of 01
 
+        // if the cmo label before the update is C-MP789JR-X001-d
+        Assertions.assertEquals("C-newPatient-X001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
