@@ -591,7 +591,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // otherwise extract the max counter from the current set of samples
         // do not rely on the size of the list having the exact same counter
         // to prevent accidentally giving samples the same counter
-        Integer maxIncrement = 0;
         for (SampleMetadata sample : existingSamples) {
             // skip samples with null cmo sample name (possible now that we allow all samples to get in db
             // even if they fail validation and/or fail label generation)
@@ -633,13 +632,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             if (sample.getPrimaryId().equals(primaryId)) {
                 return currentIncrement;
             }
-
-            // update max increment if needed
-            if (currentIncrement > maxIncrement) {
-                maxIncrement = currentIncrement;
-            }
         }
-        return maxIncrement + 1;
+        // always return 1 by default if a primary id match isn't found and we are resolving the
+        // nuc acid counter since the nuc acid counter should be based on a per-unique sample
+        // basis and not by total patient samples
+        return 1;
     }
 
     private String generateCmoCelllineSampleLabel(String requestId, String sampleInvestigatorId) {
