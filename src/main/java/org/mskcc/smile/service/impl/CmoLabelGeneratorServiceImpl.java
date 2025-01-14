@@ -449,18 +449,6 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return 1;
         }
 
-        // if we find a match by the primary id then return the increment parsed from
-        // the matching sample's current cmo label
-        for (SampleMetadata sample : existingSamples) {
-            if (sample.getPrimaryId().equalsIgnoreCase(primaryId)) {
-                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
-                if (matcher.find()) {
-                    Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
-                    return currentIncrement;
-                }
-            }
-        }
-
         // if match isn't found by primary id then attempt to resolve count by checking increments
         // of samples with matching alt ids
         // TODO decide how to handle cases where the same alt id is associated with
@@ -478,7 +466,19 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 return altIdSampleCounters.get(0);
             } else {
                 // decide whether to use max or min counter associated with the alt id...
-                return Collections.max(altIdSampleCounters);
+                return Collections.min(altIdSampleCounters);
+            }
+        }
+
+        // if we find a match by the primary id then return the increment parsed from
+        // the matching sample's current cmo label
+        for (SampleMetadata sample : existingSamples) {
+            if (sample.getPrimaryId().equalsIgnoreCase(primaryId)) {
+                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+                if (matcher.find()) {
+                    Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                    return currentIncrement;
+                }
             }
         }
 
@@ -555,6 +555,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     continue;
                 }
 
+                // skip labels that do not match the current nucleic acid abbreviation
                 String currentNucAcidAbbreviation = matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP);
                 if (!currentNucAcidAbbreviation.equals(nucleicAcidAbbreviation)) {
                     continue;

@@ -293,7 +293,7 @@ public class CmoLabelGeneratorServiceTest {
         // this is due to one of the samples from the alt id having both a #1 and #2
         String cmoLabelWithAltIds = cmoLabelGeneratorService.generateCmoSampleLabel(newSample1,
                 existingSamples, samplesByAltId);
-        Assertions.assertEquals("C-MP789JR-P002-d02", cmoLabelWithAltIds);
+        Assertions.assertEquals("C-MP789JR-P001-d02", cmoLabelWithAltIds);
         newSample1.setCmoSampleName(cmoLabelWithAltIds);
         samplesByAltId.add(newSample1);
 
@@ -305,7 +305,7 @@ public class CmoLabelGeneratorServiceTest {
         newSample2.setSampleClass("Non-PDX");
         String cmoLabelWithAltIds2 = cmoLabelGeneratorService.generateCmoSampleLabel(newSample2,
                 existingSamples, samplesByAltId);
-        Assertions.assertEquals("C-MP789JR-P002-d03", cmoLabelWithAltIds2);
+        Assertions.assertEquals("C-MP789JR-P001-d03", cmoLabelWithAltIds2);
         newSample2.setCmoSampleName(cmoLabelWithAltIds2);
         samplesByAltId.add(newSample2);
     }
