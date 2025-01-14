@@ -27,11 +27,11 @@
         {
           "barcodeId": "IDT29",
           "barcodeIndex": "ATTGAGGA",
-          "libraryIgoId": "MOCKREQUEST1_B_1_1_1_1",
+          "libraryIgoId": "MOCKREQUEST1_B_1_1_1_1_updated_library_id",
           "libraryVolume": 35.0,
           "libraryConcentrationNgul": 34.8,
           "captureConcentrationNm": "11.49425287356322",
-          "captureInputNg": "400.0",
+          "captureInputNg": "900000.0",
           "captureName": "Pool-MOCKREQUEST1_B-Tube7_1",
           "runs": [
             {

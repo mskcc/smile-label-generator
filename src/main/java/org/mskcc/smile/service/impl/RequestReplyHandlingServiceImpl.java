@@ -38,6 +38,9 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
     @Value("${request_reply.patient_samples_topic:}")
     private String PATIENT_SAMPLES_REQUEST_TOPIC;
 
+    @Value("${request_reply.samples_by_alt_id_topic}")
+    private String SAMPLES_BY_ALT_ID_REQREPLY_TOPIC;
+
     @Value("${num.new_request_handler_threads:1}")
     private int NUM_NEW_REQUEST_HANDLERS;
 
@@ -92,9 +95,13 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
                     if (replyInfo != null) {
                         SampleMetadata sample = mapper.readValue(replyInfo.getRequestMessage(),
                                 SampleMetadata.class);
+                        List<SampleMetadata> existingPatientSamples
+                                = getExistingPatientSamples(sample.getCmoPatientId());
+                        List<SampleMetadata> samplesByAltId
+                                = getSamplesByAltId(sample.getAdditionalProperty("altId"));
                         String updatedCmoSampleLabel =
                                 cmoLabelGeneratorService.generateCmoSampleLabel(sample,
-                                        getExistingPatientSamples(sample.getCmoPatientId()));
+                                        existingPatientSamples, samplesByAltId);
 
                         //log replied to the message
                         messagingGateway.replyPublish(replyInfo.getReplyTo(), updatedCmoSampleLabel);
@@ -120,6 +127,15 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
                 new String(reply.getData(), StandardCharsets.UTF_8),
                 SampleMetadata[].class);
         return new ArrayList<>(Arrays.asList(ptSamples));
+    }
+
+    private List<SampleMetadata> getSamplesByAltId(String altId) throws Exception {
+        Message reply = messagingGateway.request(SAMPLES_BY_ALT_ID_REQREPLY_TOPIC,
+                    altId);
+        SampleMetadata[] samplesByAltId = mapper.readValue(
+                new String(reply.getData(), StandardCharsets.UTF_8),
+                SampleMetadata[].class);
+        return new ArrayList<>(Arrays.asList(samplesByAltId));
     }
 
     @Override
