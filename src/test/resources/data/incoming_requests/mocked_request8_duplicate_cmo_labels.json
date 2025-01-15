@@ -1,8 +1,8 @@
 {
-  "requestId": "MOCKREQUEST1_B",
-  "recipe": "GENESET101",
+  "requestId": "MOCKREQUEST8_D",
+  "recipe": "GENESET101_BAITS",
   "projectManagerName": "Bar, Foo",
-  "piEmail": "request1pi@mskcc.org",
+  "piEmail": "request8pi@mskcc.org",
   "labHeadName": "Foo Bar",
   "labHeadEmail": "request1pi@mskcc.org",
   "investigatorName": "John Smith",
@@ -16,7 +16,7 @@
   "bicAnalysis": false,
   "samples": [
     {
-      "cmoSampleName": "C-MP789JR-X001-d",
+      "cmoSampleName": "C-MP636AP-N001-d",
       "sampleName": "XXX002_P3_12345_L1",
       "cmoSampleClass": "Primary",
       "oncoTreeCode": "CLL",
@@ -27,12 +27,12 @@
         {
           "barcodeId": "IDT29",
           "barcodeIndex": "ATTGAGGA",
-          "libraryIgoId": "MOCKREQUEST1_B_1_1_1_1",
+          "libraryIgoId": "MOCKREQUEST8_D_1_1_1_1",
           "libraryVolume": 35.0,
           "libraryConcentrationNgul": 34.8,
           "captureConcentrationNm": "11.49425287356322",
           "captureInputNg": "400.0",
-          "captureName": "Pool-MOCKREQUEST1_B-Tube7_1",
+          "captureName": "Pool-MOCKREQUEST8_D-Tube7_1",
           "runs": [
             {
               "runMode": "HiSeq High Output",
@@ -43,17 +43,20 @@
               "flowCellLanes": [
                 5
               ],
-              "fastqs": []
+              "fastqs": [
+                "/FASTQ/Project_MOCKREQUEST8_D/Sample_XXX002_P3_12345_L1_IGO_MOCKREQUEST8_D_1/XXX002_P3_12345_L1_IGO_MOCKREQUEST8_D_1_S82_R1_001.fastq.gz",
+                "/FASTQ/Project_MOCKREQUEST8_D/Sample_XXX002_P3_12345_L1_IGO_MOCKREQUEST8_D_1/XXX002_P3_12345_L1_IGO_MOCKREQUEST8_D_1_S82_R2_001.fastq.gz"
+              ]
             }
           ]
         }
       ],
-      "cmoPatientId": "C-MP789JR",
-      "igoId": "MOCKREQUEST1_B_1",
-      "investigatorSampleId": "XXX002_P3_12345_L1",
+      "cmoPatientId": "C-MP636AP",
+      "igoId": "MOCKREQUEST8_D_1",
+      "investigatorSampleId": "NORMAL_SAMPLE8_123",
       "species": "Human",
       "sex": "F",
-      "tumorOrNormal": "Tumor",
+      "tumorOrNormal": "Normal",
       "preservation": "Frozen",
       "specimenType": "PDX",
       "sampleOrigin": "Tissue",
@@ -61,10 +64,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "testingNaToExtractvalue",
-        "recipe": "GENESET101_BAITS",
-        "normalizedPatientId": "testingNormalizedPatientIdvalue",
-        "sampleType": "PDX"
+        "naToExtract": "",
+        "sampleType": "Tissue",
+        "normalizedPatientId": "MRN_REDACTED",
+        "recipe": "GENESET101_BAITS"
       },
       "status": {
         "validationStatus": true,
@@ -72,7 +75,7 @@
       }
     },
     {
-      "cmoSampleName": "C-MP789JR-N001-d",
+      "cmoSampleName": "C-MP636AP-N001-d",
       "sampleName": "01-0012345a",
       "cmoSampleClass": "Normal",
       "oncoTreeCode": "CLL",
@@ -83,111 +86,12 @@
         {
           "barcodeId": "TNG41",
           "barcodeIndex": "CGACTGGA",
-          "libraryIgoId": "MOCKREQUEST1_B_2_1_1_1",
+          "libraryIgoId": "MOCKREQUEST8_D_2_1_1_1",
           "libraryVolume": 35.0,
           "libraryConcentrationNgul": 33.5,
           "captureConcentrationNm": "5.074626865671642",
           "captureInputNg": "170.0",
-          "captureName": "Pool-MOCKREQUEST1_B-Tube7_1",
-          "runs": []
-        }
-      ],
-      "cmoPatientId": "C-MP789JR",
-      "igoId": "MOCKREQUEST1_B_2",
-      "investigatorSampleId": "01-0012345a",
-      "species": "Human",
-      "sex": "F",
-      "tumorOrNormal": "Normal",
-      "preservation": "Frozen",
-      "specimenType": "Blood",
-      "sampleOrigin": "Whole Blood",
-      "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
-      "igoComplete": true,
-      "cmoSampleIdFields": {
-        "naToExtract": "testingNaToExtractvalue",
-        "recipe": "GENESET101_BAITS",
-        "normalizedPatientId": "testingNormalizedPatientIdvalue",
-        "sampleType": "Blood"
-      },
-      "status": {
-        "validationStatus": true,
-        "validationReport": "{}"
-      }
-    },
-    {
-      "cmoSampleName": "C-8DH24X-X001-d",
-      "sampleName": "XXX002_P1_12348a_R_43",
-      "cmoSampleClass": "Primary",
-      "oncoTreeCode": "COAD",
-      "collectionYear": "",
-      "tubeId": "",
-      "qcReports": [],
-      "libraries": [
-        {
-          "barcodeId": "TNG53",
-          "barcodeIndex": "GCTCGGTA",
-          "libraryIgoId": "MOCKREQUEST1_B_3_1_1_1",
-          "libraryVolume": 35.0,
-          "libraryConcentrationNgul": 35.2,
-          "captureConcentrationNm": "11.363636363636363",
-          "captureInputNg": "400.0",
-          "captureName": "Pool-MOCKREQUEST1_B-Tube7_1",
-          "runs": [
-            {
-              "runMode": "HiSeq High Output",
-              "runId": "RUNID_0123",
-              "flowCellId": "X5KL2KKAY",
-              "readLength": "",
-              "runDate": "2018-06-05",
-              "flowCellLanes": [
-                5
-              ]
-            }
-          ]
-        }
-      ],
-      "cmoPatientId": "C-8DH24X",
-      "igoId": "MOCKREQUEST1_B_3",
-      "investigatorSampleId": "XXX002_P1_12348a_R_43",
-      "species": "Human",
-      "sex": "M",
-      "tumorOrNormal": "Tumor",
-      "preservation": "Frozen",
-      "specimenType": "PDX",
-      "sampleOrigin": "Tissue",
-      "tissueLocation": "",
-      "baitSet": "GENESET101_BAITS",
-      "igoComplete": true,
-      "cmoSampleIdFields": {
-        "naToExtract": "testingNaToExtractvalue",
-        "recipe": "GENESET101_BAITS",
-        "normalizedPatientId": "testingNormalizedPatientIdvalue",
-        "sampleType": "PDX"
-      },
-      "status": {
-        "validationStatus": true,
-        "validationReport": "{}"
-      }
-    },
-    {
-      "cmoSampleName": "C-8DH24X-N001-d",
-      "sampleName": "01-XXXXXXXa",
-      "cmoSampleClass": "Normal",
-      "oncoTreeCode": "COAD",
-      "collectionYear": "",
-      "tubeId": "",
-      "qcReports": [],
-      "libraries": [
-        {
-          "barcodeId": "TNG65",
-          "barcodeIndex": "TGGAACAA",
-          "libraryIgoId": "MOCKREQUEST1_B_4_1_1_1",
-          "libraryVolume": 35.0,
-          "libraryConcentrationNgul": 34.1,
-          "captureConcentrationNm": "4.9853372434017595",
-          "captureInputNg": "170.0",
-          "captureName": "Pool-MOCKREQUEST1_B-Tube7_1",
+          "captureName": "Pool-MOCKREQUEST8_D-Tube7_1",
           "runs": [
             {
               "runMode": "HiSeq High Output",
@@ -198,16 +102,19 @@
               "flowCellLanes": [
                 5
               ],
-              "fastqs": []
+              "fastqs": [
+                "/FASTQ/Project_MOCKREQUEST8_D/Sample_01-0012345a_IGO_MOCKREQUEST8_D_2/01-0012345a_IGO_MOCKREQUEST8_D_2_S83_R2_001.fastq.gz",
+                "/FASTQ/Project_MOCKREQUEST8_D/Sample_01-0012345a_IGO_MOCKREQUEST8_D_2/01-0012345a_IGO_MOCKREQUEST8_D_2_S83_R1_001.fastq.gz"
+              ]
             }
           ]
         }
       ],
-      "cmoPatientId": "C-8DH24X",
-      "igoId": "MOCKREQUEST1_B_4",
-      "investigatorSampleId": "01-XXXXXXXa",
+      "cmoPatientId": "C-MP636AP",
+      "igoId": "MOCKREQUEST8_D_2",
+      "investigatorSampleId": "NORMAL_SAMPLE8_123",
       "species": "Human",
-      "sex": "M",
+      "sex": "F",
       "tumorOrNormal": "Normal",
       "preservation": "Frozen",
       "specimenType": "Blood",
@@ -216,10 +123,10 @@
       "baitSet": "GENESET101_BAITS",
       "igoComplete": true,
       "cmoSampleIdFields": {
-        "naToExtract": "testingNaToExtractvalue",
-        "recipe": "GENESET101_BAITS",
-        "normalizedPatientId": "testingNormalizedPatientIdvalue",
-        "sampleType": "Blood"
+        "naToExtract": "",
+        "sampleType": "Whole Blood",
+        "normalizedPatientId": "MRN_REDACTED",
+        "recipe": "GENESET101_BAITS"
       },
       "status": {
         "validationStatus": true,
