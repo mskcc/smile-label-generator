@@ -33,6 +33,8 @@ import org.springframework.context.annotation.Import;
 @SpringBootTest(classes = LabelGeneratorTestApp.class)
 @Import(TestConfiguration.class)
 public class PortedLimsRestCmoLabelGenerationTest {
+    // setting as empty for now until alt id is fully supported
+    List<SampleMetadata> SAMPLES_BY_ALT_ID = new ArrayList<>();
 
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
@@ -54,7 +56,8 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample = getSampleMetadata("4324", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, new ArrayList<>());
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+                new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId);
     }
 
@@ -80,8 +83,13 @@ public class PortedLimsRestCmoLabelGenerationTest {
         // get existing samples for given igo id and request id
         List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assertions.assertEquals("C-1235-X002-d02", cmoId);
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+                existingSamples, SAMPLES_BY_ALT_ID);
+
+        // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
+        // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
+        Assertions.assertNotEquals("C-1235-X002-d02", cmoId);
+        Assertions.assertEquals("C-1235-X002-d01", cmoId);
     }
 
     /**
@@ -108,8 +116,13 @@ public class PortedLimsRestCmoLabelGenerationTest {
         // get existing samples for given igo id and request id
         List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assertions.assertEquals("C-1235-X002-d02", cmoId);
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+                existingSamples, SAMPLES_BY_ALT_ID);
+
+        // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
+        // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
+        Assertions.assertNotEquals("C-1235-X002-d02", cmoId);
+        Assertions.assertEquals("C-1235-X002-d01", cmoId);
     }
 
     /**
@@ -133,8 +146,13 @@ public class PortedLimsRestCmoLabelGenerationTest {
         // get existing samples for given igo id and request id
         List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
-        Assertions.assertEquals("C-1235-X013-d02", cmoId);
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+                existingSamples, SAMPLES_BY_ALT_ID);
+
+        // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
+        // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
+        Assertions.assertNotEquals("C-1235-X013-d02", cmoId);
+        Assertions.assertEquals("C-1235-X013-d01", cmoId);
     }
 
     /**
@@ -162,7 +180,11 @@ public class PortedLimsRestCmoLabelGenerationTest {
 
         // since nucleic acid abbreviation is different from existing sample, the
         // nucleic acid counter is also '01'
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample, existingSamples);
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+                existingSamples, SAMPLES_BY_ALT_ID);
+
+        // this test result remains as is since the nuc acid is different from existing ones and would
+        // recieve a nuc acid count of 1 anyway
         Assertions.assertEquals("C-1235-X002-r01", cmoId);
     }
 
@@ -183,7 +205,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>());
+                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
@@ -194,8 +216,13 @@ public class PortedLimsRestCmoLabelGenerationTest {
 
         IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
-        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2, existingSamples);
-        Assertions.assertEquals("C-1235-X002-d02", cmoId2);
+        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2,
+                existingSamples, SAMPLES_BY_ALT_ID);
+
+        // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
+        // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
+        Assertions.assertNotEquals("C-1235-X002-d02", cmoId2);
+        Assertions.assertEquals("C-1235-X002-d01", cmoId2);
     }
 
     /**
@@ -215,7 +242,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>());
+                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
@@ -226,7 +253,11 @@ public class PortedLimsRestCmoLabelGenerationTest {
 
         IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.RNA);
-        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2, existingSamples);
+        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2,
+                existingSamples, SAMPLES_BY_ALT_ID);
+
+        // this test result remains as is since the nuc acid is different from existing ones and would
+        // recieve a nuc acid count of 1 anyway
         Assertions.assertEquals("C-1235-X002-r01", cmoId2);
     }
 
@@ -248,7 +279,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.XENOGRAFT, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>());
+                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
@@ -260,8 +291,12 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
                 SpecimenType.PDX, NucleicAcid.DNA);
         String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample2, existingSamples);
-        Assertions.assertEquals("C-1235-X002-d02", cmoId2);
+                sample2, existingSamples, SAMPLES_BY_ALT_ID);
+
+        // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
+        // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
+        Assertions.assertNotEquals("C-1235-X002-d02", cmoId2);
+        Assertions.assertEquals("C-1235-X002-d01", cmoId2);
     }
 
     /**
@@ -281,7 +316,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.ORGANOID, NucleicAcid.DNA);
         String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>());
+                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-G001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
@@ -293,8 +328,12 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
                 SpecimenType.ORGANOID, NucleicAcid.DNA);
         String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample2, existingSamples);
-        Assertions.assertEquals("C-1235-G002-d02", cmoId2);
+                sample2, existingSamples, SAMPLES_BY_ALT_ID);
+
+        // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
+        // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
+        Assertions.assertNotEquals("C-1235-G002-d02", cmoId2);
+        Assertions.assertEquals("C-1235-G002-d01", cmoId2);
     }
 
     /**
@@ -328,10 +367,14 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.ORGANOID, NucleicAcid.DNA);
         String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
+
+        // NOTE: now that the nucleic acid counter doesn't increment for unless it's
+        // another sample of the same alt id, the 'updatedCmoLabel' returned should
+        // have a nuc acid counter of 01
         // confirm that the label generated would still increment even though it will
         // be determined that the sample cmo label does NOT need to be updated for this sample
-        Assertions.assertEquals("C-1235-G001-d03", updatedCmoLabel);
+        Assertions.assertEquals("C-1235-G001-d01", updatedCmoLabel);
         Boolean needsUpdates =
                 cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assertions.assertFalse(needsUpdates);
@@ -365,7 +408,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
                 SpecimenType.ORGANOID, NucleicAcid.RNA);
         String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-G001-r01", updatedCmoLabel);
         Boolean needsUpdates = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assertions.assertTrue(needsUpdates);

@@ -69,6 +69,9 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     @Value("${request_reply.samples_by_cmo_label_topic}")
     private String SAMPLES_BY_CMO_LABEL_REQREPLY_TOPIC;
 
+    @Value("${request_reply.samples_by_alt_id_topic}")
+    private String SAMPLES_BY_ALT_ID_REQREPLY_TOPIC;
+
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
 
@@ -77,6 +80,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     private static boolean initialized = false;
     private static volatile boolean shutdownInitiated;
     private static final ExecutorService exec = Executors.newCachedThreadPool();
+
     private static final BlockingQueue<String> cmoLabelGeneratorQueue =
         new LinkedBlockingQueue<String>();
     private static final BlockingQueue<String> cmoPromotedLabelQueue =
@@ -87,6 +91,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         new LinkedBlockingQueue<String>();
     private static final BlockingQueue<SampleMetadata> cmoSampleLabelUpdateQueue =
         new LinkedBlockingQueue<SampleMetadata>();
+
     private static CountDownLatch cmoLabelGeneratorShutdownLatch;
     private static CountDownLatch cmoPromotedLabelShutdownLatch;
     private static CountDownLatch newRequestPublisherShutdownLatch;
@@ -229,9 +234,12 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                 List<SampleMetadata> existingSamples =
                                         patientSamplesMap.getOrDefault(sampleManifest.getCmoPatientId(),
                                                 new ArrayList<>());
+                                List<SampleMetadata> samplesByAltId
+                                        = getSamplesByAltId(sampleManifest.getAltid());
+
                                 // TODO resolve any issues that arise with errors in generating cmo label
                                 String newSampleCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
-                                        requestId, sampleManifest, existingSamples);
+                                        requestId, sampleManifest, existingSamples, samplesByAltId);
                                 if (newSampleCmoLabel == null) {
                                     sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                                             requestId, sampleManifest, existingSamples);
@@ -391,6 +399,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         String origSampleJson = mapper.writeValueAsString(sample);
                         List<SampleMetadata> existingSamples =
                                 getExistingPatientSamples(sample.getCmoPatientId());
+                        List<SampleMetadata> samplesByAltId
+                                = getSamplesByAltId(sample.getAdditionalProperty("altId"));
                         // Case when sample update json doesn't have status
                         if (sample.getStatus() == null) {
                             Status newSampleStatus = cmoLabelGeneratorService
@@ -400,7 +410,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         if (sample.getStatus().getValidationStatus()) {
                             // generate new cmo sample label and update sample metadata object
                             String newCmoSampleLabel =
-                                    cmoLabelGeneratorService.generateCmoSampleLabel(sample, existingSamples);
+                                    cmoLabelGeneratorService.generateCmoSampleLabel(sample,
+                                            existingSamples, samplesByAltId);
                             if (newCmoSampleLabel == null) {
                                 Status newSampleStatus = cmoLabelGeneratorService
                                         .generateSampleStatus(sample, existingSamples);
@@ -599,6 +610,15 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 new String(reply.getData(), StandardCharsets.UTF_8),
                 SampleMetadata[].class);
         return new ArrayList<>(Arrays.asList(samplesByCmoLabel));
+    }
+
+    private List<SampleMetadata> getSamplesByAltId(String altId) throws Exception {
+        Message reply = messagingGateway.request(SAMPLES_BY_ALT_ID_REQREPLY_TOPIC,
+                    altId);
+        SampleMetadata[] samplesByAltId = mapper.readValue(
+                new String(reply.getData(), StandardCharsets.UTF_8),
+                SampleMetadata[].class);
+        return new ArrayList<>(Arrays.asList(samplesByAltId));
     }
 
     private Boolean isCmoLabelAlreadyInUse(String primaryId, String cmoLabel) throws Exception {
