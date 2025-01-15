@@ -445,7 +445,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      */
     private Integer resolveSampleIncrementValue(String primaryId, List<SampleMetadata> existingSamples,
             List<SampleMetadata> samplesByAltId) {
-        if (existingSamples.isEmpty()) {
+        if (existingSamples.isEmpty() && samplesByAltId.isEmpty()) {
             return 1;
         }
 
