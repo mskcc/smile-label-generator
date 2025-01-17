@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.ObjectUtils;
@@ -150,6 +151,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // compare sample type abbreviation
         if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_TYPE_ABBREV_GROUP)) {
             LOG.info("Sample Type abbreviation differs between incoming IGO sample and matching IGO sample "
+                    + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
+            return Boolean.TRUE;
+        }
+        // compare sample counter (may change if alt id numbering corrections are being made)
+        if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_COUNTER_GROUP)) {
+            LOG.info("Sample Type counter differs between incoming IGO sample and matching IGO sample "
                     + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
             return Boolean.TRUE;
         }
@@ -445,7 +452,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      */
     private Integer resolveSampleIncrementValue(String primaryId, List<SampleMetadata> existingSamples,
             List<SampleMetadata> samplesByAltId) {
-        if (existingSamples.isEmpty() && samplesByAltId.isEmpty()) {
+        if ((existingSamples == null || existingSamples.isEmpty())
+                && (samplesByAltId == null || samplesByAltId.isEmpty())) {
             return 1;
         }
 
@@ -456,9 +464,19 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             for (SampleMetadata sample : samplesByAltId) {
                 Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
                 if (matcher.find()) {
-                    Integer increment = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
-                    altIdSampleCounters.add(increment);
+                    try {
+                        Integer increment = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                        altIdSampleCounters.add(increment);
+                    } catch (NoSuchElementException e) {
+                        LOG.error("Could not resolve sample counter from label: "
+                                + sample.getCmoSampleName());
+                    }
                 }
+            }
+            if (altIdSampleCounters.isEmpty()) {
+                LOG.warn("Could not resolve sample counters from any of the samples matching the same "
+                        + "ALT ID - returning counter as 1 by default");
+                return 1;
             }
             if (altIdSampleCounters.size() == 1) {
                 return altIdSampleCounters.get(0);
