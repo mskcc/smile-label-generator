@@ -309,6 +309,22 @@ public class CmoLabelGeneratorServiceTest {
         samplesByAltId.add(newSample2);
     }
 
+    /**
+     * Simple test to make sure that changes to the sample counter are considered valid changes
+     * for the cmo label that should result in an update to the database.
+     * @throws Exception
+     */
+    @Test
+    public void testChangeInSampleCounter() throws Exception {
+        String origLabel = "C-VVF33N-P003-d";
+        String newLabel = "C-VVF33N-P004-d01";
+        Assertions.assertTrue(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(newLabel, origLabel));
+
+        String labelWithoutSampleCountChange = "C-VVF33N-P003-d01";
+        Assertions.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
+                labelWithoutSampleCountChange, origLabel));
+    }
+
     private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
             SpecimenType specimenType, NucleicAcid naToExtract, String investigatorSampleId, String altId) {
         IgoSampleManifest sample = new IgoSampleManifest();
