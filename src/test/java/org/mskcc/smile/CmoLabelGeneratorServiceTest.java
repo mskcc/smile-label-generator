@@ -3,9 +3,13 @@ package org.mskcc.smile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mskcc.smile.commons.enums.NucleicAcid;
@@ -288,8 +292,8 @@ public class CmoLabelGeneratorServiceTest {
         List<SampleMetadata> samplesByAltId =
                 getPatientSamplesFromRequestJson("mockPublishedRequest1JsonDataWith2T2N", "C-MP789JR");
 
-        // if there are samples by the same alt id then the new sample should receive tumor counter #2
-        // this is due to one of the samples from the alt id having both a #1 and #2
+        // if there are samples by the same alt id then the new sample should receive tumor counter #1
+        // and dna counter
         String cmoLabelWithAltIds = cmoLabelGeneratorService.generateCmoSampleLabel(newSample1,
                 existingSamples, samplesByAltId);
         Assertions.assertEquals("C-MP789JR-P001-d02", cmoLabelWithAltIds);
@@ -323,6 +327,30 @@ public class CmoLabelGeneratorServiceTest {
         String labelWithoutSampleCountChange = "C-VVF33N-P003-d01";
         Assertions.assertFalse(cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
                 labelWithoutSampleCountChange, origLabel));
+    }
+
+    @Test
+    public void testNextConsecutiveCounter() throws Exception {
+        Set<Integer> counters = new HashSet<>(Arrays.asList(new Integer[] {1, 2, 7}));
+        Integer nextConsecutiveInt = getNextConsecutiveCounter(counters);
+        Assertions.assertEquals(3, nextConsecutiveInt);
+    }
+
+    private Integer getNextConsecutiveCounter(Set<Integer> counters) {
+        List<Integer> sortedCounters = Arrays.asList(counters.toArray(Integer[]::new));
+        Collections.sort(sortedCounters);
+
+        Integer refCounter = Collections.min(counters);
+        for (int i = 1; i < sortedCounters.size(); i++) {
+            Integer currentCounter = sortedCounters.get(i);
+            Integer prevCounter = sortedCounters.get(i - 1);
+            if ((currentCounter - prevCounter) > 1) {
+                return prevCounter + 1;
+            } else {
+                refCounter = currentCounter;
+            }
+        }
+        return refCounter + 1;
     }
 
     private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
