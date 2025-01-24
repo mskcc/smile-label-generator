@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.ObjectUtils;
@@ -166,9 +168,49 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
             return Boolean.TRUE;
         }
+        // compare nucleic acid counter (may change if alt id numbering corrections are being made)
+        if (!compareNucleicAcidCounterGroups(matcherNewLabel, matcherExistingLabel)) {
+            LOG.info("Nucleic Acid counter differs between incoming IGO sample and matching IGO sample "
+                    + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
+            return Boolean.TRUE;
+        }
         return Boolean.FALSE;
     }
 
+    /**
+     * Resolves and compares the nucleic acid counter. Returns true if both Matchers are the same.
+     * @param matcher1
+     * @param matcher2
+     * @return Boolean
+     */
+    private Boolean compareNucleicAcidCounterGroups(Matcher matcher1, Matcher matcher2) {
+        // resolve value for matcher 1
+        Integer matcher1Counter;
+        if (matcher1.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
+                || matcher1.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
+            matcher1Counter = 1;
+        } else {
+            matcher1Counter = Integer.valueOf(matcher1.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+        }
+
+        // resolve value for matcher 2
+        Integer matcher2Counter;
+        if (matcher2.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
+                || matcher2.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
+            matcher2Counter = 1;
+        } else {
+            matcher2Counter = Integer.valueOf(matcher2.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+        }
+        return matcher1Counter.equals(matcher2Counter);
+    }
+
+    /**
+     * Returns true if the group from both Matchers are the same.
+     * @param matcher1
+     * @param matcher2
+     * @param group
+     * @return Boolean
+     */
     private Boolean compareMatcherGroups(Matcher matcher1, Matcher matcher2, Integer group) {
         return matcher1.group(group).equalsIgnoreCase(matcher2.group(group));
     }
@@ -554,6 +596,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         if (!samplesByAltId.isEmpty()) {
             Integer maxIncrement = 0;
+            Set<Integer> nucAcidCountersByAltId = new HashSet<>();
+            Integer nucAcidCounterByMatchingPrimaryId = -1;
             for (SampleMetadata sample : samplesByAltId) {
                 // ignore samples with empty cmo sample labels
                 if (StringUtils.isBlank(sample.getCmoSampleName())) {
@@ -583,12 +627,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 } else {
                     currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
                 }
+                nucAcidCountersByAltId.add(currentIncrement);
 
                 // if primary id match is found then we know that this sample isn't actually being
                 // reprocessed and likely received some other metadata update that should not affect
                 // the label generation as far as the nuc acid counter is concerned
                 if (sample.getPrimaryId().equals(primaryId)) {
-                    return currentIncrement;
+                    nucAcidCounterByMatchingPrimaryId = currentIncrement;
                 }
 
                 // update max increment if needed
@@ -596,63 +641,46 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     maxIncrement = currentIncrement;
                 }
             }
-            // assuming that this sample primary id does not already exist in the list of samples matching
-            // the same alt id means that we should use the max increment found + 1
-            return maxIncrement + 1;
+
+            // if nuc acid counters list is empty then return 1 by default
+            if (nucAcidCountersByAltId.isEmpty()) {
+                return 1;
+            }
+
+            // if the max increment does not match the length of the samples matching the alt id
+            // then return the nucleic acid counter as the size of matching samples by alt id
+            // note: there's a step in the message handler that will ensure that a unique cmo label
+            // is assigned to the sample being interrogated so there's no need to worry about
+            // assigning a used nucleic acid counter during this step
+            if (maxIncrement != nucAcidCountersByAltId.size()) {
+                return nucAcidCountersByAltId.size();
+            }
+
+            // figure out what the next consecutive nucleic acid counter is and return
+            return getNextConsecutiveCounter(nucAcidCountersByAltId);
         }
 
-        // handle cases where alt ID hasn't been backfilled yet or maybe it's the first time
-        // that this alt ID will be appearing in the database
-
-        // otherwise extract the max counter from the current set of samples
-        // do not rely on the size of the list having the exact same counter
-        // to prevent accidentally giving samples the same counter
-        for (SampleMetadata sample : existingSamples) {
-            // skip samples with null cmo sample name (possible now that we allow all samples to get in db
-            // even if they fail validation and/or fail label generation)
-            if (StringUtils.isBlank(sample.getCmoSampleName())) {
-                continue;
-            }
-            // skip cell line samples
-            if (CMO_CELLLINE_ID_REGEX.matcher(sample.getCmoSampleName()).find()) {
-                continue;
-            }
-
-            Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
-
-            // if label doesn't match the cmo label regex pattern then skip
-            if (!matcher.find()) {
-                continue;
-            }
-            // increment assigned to the current sample is in group 3 of matcher
-            // nucleic acid abbreviation determines which counters we consider
-
-            // when iterating through sample list if nuc acid doesn't match then move
-            // on to the next one
-            if (!matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP)
-                    .equalsIgnoreCase(nucleicAcidAbbreviation)) {
-                continue;
-            }
-
-            Integer currentIncrement;
-            if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
-                    || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
-                currentIncrement = 1;
-            } else {
-                currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
-            }
-
-            // if primary id match is found then we know that this sample isn't actually being
-            // reprocessed and likely received some other metadata update that should not affect
-            // the label generation as far as the nuc acid counter is concerned
-            if (sample.getPrimaryId().equals(primaryId)) {
-                return currentIncrement;
-            }
-        }
-        // always return 1 by default if a primary id match isn't found and we are resolving the
-        // nuc acid counter since the nuc acid counter should be based on a per-unique sample
-        // basis and not by total patient samples
+        // always return 1 by default if there aren't any samples matching by alt id since the
+        // nuc acid counter should be resolved on a per-unique sample basis and not
+        // by total patient samples
         return 1;
+    }
+
+    private Integer getNextConsecutiveCounter(Set<Integer> counters) {
+        List<Integer> sortedCounters = Arrays.asList(counters.toArray(Integer[]::new));
+        Collections.sort(sortedCounters);
+
+        Integer refCounter = Collections.min(counters);
+        for (int i = 1; i < sortedCounters.size(); i++) {
+            Integer currentCounter = sortedCounters.get(i);
+            Integer prevCounter = sortedCounters.get(i - 1);
+            if ((currentCounter - prevCounter) > 1) {
+                return prevCounter + 1;
+            } else {
+                refCounter = currentCounter;
+            }
+        }
+        return refCounter + 1;
     }
 
     private String generateCmoCelllineSampleLabel(String requestId, String sampleInvestigatorId) {

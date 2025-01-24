@@ -447,6 +447,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                             + sample.getCmoSampleName()
                                             + ", newly generated CMO label (using)="
                                             + newCmoSampleLabel);
+                                    resolvedCmoSampleLabel = newCmoSampleLabel;
                                 } else {
                                     // before settling on using the provided cmo label from the
                                     // incoming sample check if that label already exists in smile
@@ -484,6 +485,16 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                         resolvedCmoSampleLabel = sample.getCmoSampleName();
                                     }
                                 }
+                            }
+                            // doesn't hurt to check to really make sure that this
+                            // label isn't already in use by another sample
+                            if (isCmoLabelAlreadyInUse(sample.getPrimaryId(),
+                                            resolvedCmoSampleLabel)) {
+                                LOG.info("Resolved label " + resolvedCmoSampleLabel + " is already in use "
+                                        + "by another sample. Using the next available label instead.");
+                                resolvedCmoSampleLabel = findNextAvailableCmoLabel(
+                                        sample.getPrimaryId(),
+                                        resolvedCmoSampleLabel);
                             }
                             // update the sample label for data being sent to smile server
                             sample.setCmoSampleName(resolvedCmoSampleLabel);
