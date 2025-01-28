@@ -615,6 +615,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     }
 
     private List<SampleMetadata> getSamplesByCmoLabel(String cmoLabel) throws Exception {
+        // return empty list if cmo label is null/empty
+        if (StringUtils.isBlank(cmoLabel)) {
+            return new ArrayList<>();
+        }
+
         Message reply = messagingGateway.request(SAMPLES_BY_CMO_LABEL_REQREPLY_TOPIC,
                     cmoLabel);
         SampleMetadata[] samplesByCmoLabel = mapper.readValue(
@@ -624,6 +629,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     }
 
     private List<SampleMetadata> getSamplesByAltId(String altId) throws Exception {
+        // return empty list if alt id is null/empty
+        if (StringUtils.isBlank(altId)) {
+            return new ArrayList<>();
+        }
+
         Message reply = messagingGateway.request(SAMPLES_BY_ALT_ID_REQREPLY_TOPIC,
                     altId);
         SampleMetadata[] samplesByAltId = mapper.readValue(
