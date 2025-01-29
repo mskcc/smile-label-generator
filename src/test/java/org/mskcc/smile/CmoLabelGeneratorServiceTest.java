@@ -80,7 +80,7 @@ public class CmoLabelGeneratorServiceTest {
         // generate cmoLabel for sample with updates
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
-        Assertions.assertEquals("C-MP789JR-P003-d01", newCmoLabel);
+        Assertions.assertEquals("C-MP789JR-T003-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
                 updatedSample, existingSamples);
@@ -286,7 +286,7 @@ public class CmoLabelGeneratorServiceTest {
         // if no samples exist by the same alt id then the new sample should receive tumor counter #3
         String cmoLabelNoAltIds = cmoLabelGeneratorService.generateCmoSampleLabel(newSample1,
                 existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
-        Assertions.assertEquals("C-MP789JR-P003-d01", cmoLabelNoAltIds);
+        Assertions.assertEquals("C-MP789JR-T003-d01", cmoLabelNoAltIds);
 
         // set up samples by alt id as same as existing samples
         List<SampleMetadata> samplesByAltId =
@@ -296,7 +296,7 @@ public class CmoLabelGeneratorServiceTest {
         // and dna counter
         String cmoLabelWithAltIds = cmoLabelGeneratorService.generateCmoSampleLabel(newSample1,
                 existingSamples, samplesByAltId);
-        Assertions.assertEquals("C-MP789JR-P001-d02", cmoLabelWithAltIds);
+        Assertions.assertEquals("C-MP789JR-T001-d02", cmoLabelWithAltIds);
         newSample1.setCmoSampleName(cmoLabelWithAltIds);
         samplesByAltId.add(newSample1);
 
@@ -308,7 +308,7 @@ public class CmoLabelGeneratorServiceTest {
         newSample2.setSampleClass("Non-PDX");
         String cmoLabelWithAltIds2 = cmoLabelGeneratorService.generateCmoSampleLabel(newSample2,
                 existingSamples, samplesByAltId);
-        Assertions.assertEquals("C-MP789JR-P001-d03", cmoLabelWithAltIds2);
+        Assertions.assertEquals("C-MP789JR-T001-d03", cmoLabelWithAltIds2);
         newSample2.setCmoSampleName(cmoLabelWithAltIds2);
         samplesByAltId.add(newSample2);
     }

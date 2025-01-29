@@ -39,9 +39,6 @@ Please follow these checks if any changes were made to any classes in the web, s
 ### II. Message handlers checklist:
 - [ ] Changes introduced affect the workflow of incoming messages.
 - [ ] Messages are following the expected workflow when published to the topic(s) changed or introduced in this pull request.
-- [ ] Unit tests were added or updated to ensure messages are handled as expected.
-
-If no unit tests were updated or added, then please explain why: [insert details here]
 
 Please describe how the workflow and messaging was tested/simulated:
 
