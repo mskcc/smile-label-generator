@@ -77,13 +77,15 @@ public class CmoLabelGeneratorServiceTest {
         updatedSample.setSampleClass("Non-PDX");
         updatedSample.setPrimaryId("newPrimaryId");
 
-        // generate cmoLabel for sample with updates
+        // generate cmoLabel for new incoming sample with no matching samples by alt id
+        // note: the sample type abbreviations for the existing patient samples are X and N
+        // which makes the new sample type (T) the first of its kind
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                 updatedSample, existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
-        Assertions.assertEquals("C-MP789JR-T003-d01", newCmoLabel);
+        Assertions.assertEquals("C-MP789JR-T001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
         Assertions.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
@@ -112,11 +114,12 @@ public class CmoLabelGeneratorServiceTest {
         String newCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(updatedSample,
                 existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
 
-        // if the cmo label before the update is C-MP789JR-X001-d
-        Assertions.assertEquals("C-newPatient-X003-d01", newCmoLabel);
+        // if the cmo label of the existing sample is C-MP789JR-X001-d
+        // then a new sample coming in of this same sample type should be given X002
+        Assertions.assertEquals("C-newPatient-X002-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
         Assertions.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
@@ -152,7 +155,7 @@ public class CmoLabelGeneratorServiceTest {
         Assertions.assertEquals("C-newPatient-X001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals(Boolean.TRUE, sampleStatus.getValidationStatus());
         Assertions.assertEquals(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
@@ -186,7 +189,7 @@ public class CmoLabelGeneratorServiceTest {
         Assertions.assertEquals("C-MP789JR-F001-d01", newCmoLabel);
 
         Status sampleStatus = cmoLabelGeneratorService.generateSampleStatus(
-                updatedSample, existingSamples);
+                updatedSample, existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals(Boolean.FALSE, sampleStatus.getValidationStatus());
         Assertions.assertNotSame(sampleStatus.getValidationReport(), (new HashMap()).toString());
     }
@@ -283,10 +286,12 @@ public class CmoLabelGeneratorServiceTest {
         newSample1.setPrimaryId("98755_B_1");
         newSample1.setSampleClass("Non-PDX");
 
-        // if no samples exist by the same alt id then the new sample should receive tumor counter #3
+        // if no samples exist by the same alt id and there are no existing samples of the same
+        // resolved sample type abbreviation then the sample counter should be #1
+        // note: the sample type abbreviations for the existing samples are X and N
         String cmoLabelNoAltIds = cmoLabelGeneratorService.generateCmoSampleLabel(newSample1,
                 existingSamples, DEFAULT_SAMPLES_BY_ALT_ID);
-        Assertions.assertEquals("C-MP789JR-T003-d01", cmoLabelNoAltIds);
+        Assertions.assertEquals("C-MP789JR-T001-d01", cmoLabelNoAltIds);
 
         // set up samples by alt id as same as existing samples
         List<SampleMetadata> samplesByAltId =
@@ -331,12 +336,23 @@ public class CmoLabelGeneratorServiceTest {
 
     @Test
     public void testNextConsecutiveCounter() throws Exception {
-        Set<Integer> counters = new HashSet<>(Arrays.asList(new Integer[] {1, 2, 7}));
-        Integer nextConsecutiveInt = getNextConsecutiveCounter(counters);
+        Set<Integer> counters = new HashSet<>(Arrays.asList(1, 2, 7));
+        Integer nextConsecutiveInt = getNextNucleicAcidIncrement(counters);
         Assertions.assertEquals(3, nextConsecutiveInt);
     }
 
-    private Integer getNextConsecutiveCounter(Set<Integer> counters) {
+    private Integer getNextNucleicAcidIncrement(Set<Integer> counters) {
+        if (counters.isEmpty()) {
+            return 1;
+        }
+        if (counters.size() == 1) {
+            if (Collections.min(counters) != 1) {
+                return 1;
+            } else {
+                return 2;
+            }
+        }
+
         List<Integer> sortedCounters = Arrays.asList(counters.toArray(Integer[]::new));
         Collections.sort(sortedCounters);
 
@@ -351,6 +367,113 @@ public class CmoLabelGeneratorServiceTest {
             }
         }
         return refCounter + 1;
+    }
+
+    @Test
+    public void testAltIdUniqueBySampleTypeMonoSampleTypes() throws Exception {
+        String primaryId = "12345_C_6";
+        String sampleTypeAbbrev = "T";
+
+        List<SampleMetadata> samplesByAltId = new ArrayList<>();
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_B_3", "C-MPJKLE-P002-d"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_F_4", "C-MPJKLE-P002-d02"));
+
+        String resolvedSampleType = cmoLabelGeneratorService.resolveSampleTypeAbbrevWithContext(
+                primaryId, sampleTypeAbbrev, samplesByAltId);
+        Assertions.assertEquals("P", resolvedSampleType);
+    }
+
+    @Test
+    public void testAltIdUniqueBySampleTypeMixedTumorSampleTypes() throws Exception {
+        String primaryId = "12345_C_6";
+        String sampleTypeAbbrev = "T";
+
+        List<SampleMetadata> samplesByAltId = new ArrayList<>();
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_B_3", "C-MPJKLE-P002-d"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_F_4", "C-MPJKLE-R002-d02"));
+
+        String resolvedSampleType = cmoLabelGeneratorService.resolveSampleTypeAbbrevWithContext(
+                primaryId, sampleTypeAbbrev, samplesByAltId);
+        Assertions.assertEquals("T", resolvedSampleType);
+    }
+
+    @Test
+    public void testAltIdUniqueBySampleTypeMixedTumorSampleTypesAndMatchingPrimaryId() throws Exception {
+        String primaryId = "12345_C_6";
+        String sampleTypeAbbrev = "T";
+
+        List<SampleMetadata> samplesByAltId = new ArrayList<>();
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_B_3", "C-MPJKLE-P002-d"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_F_4", "C-MPJKLE-R002-d02"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_C_6", "C-MPJKLE-M002-d02"));
+
+        String resolvedSampleType = cmoLabelGeneratorService.resolveSampleTypeAbbrevWithContext(
+                primaryId, sampleTypeAbbrev, samplesByAltId);
+        Assertions.assertEquals("M", resolvedSampleType);
+    }
+
+    @Test
+    public void testAltIdUniqueBySampleTypeComplexMixedTumorTypesAndNoMatchingPrimaryId() throws Exception {
+        String primaryId = "12345_C_6";
+        String sampleTypeAbbrev = "L";
+
+        List<SampleMetadata> samplesByAltId = new ArrayList<>();
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_B_3", "C-MPJKLE-P002-d"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_F_4", "C-MPJKLE-R002-d02"));
+
+        String resolvedSampleType = cmoLabelGeneratorService.resolveSampleTypeAbbrevWithContext(
+                primaryId, sampleTypeAbbrev, samplesByAltId);
+        Assertions.assertEquals("L", resolvedSampleType);
+    }
+
+    @Test
+    public void testAltIdUniqueBySampleTypeComplexMixedTumorTypesAndMatchingPrimaryId() throws Exception {
+        String primaryId = "12345_C_6";
+        String sampleTypeAbbrev = "L";
+
+        List<SampleMetadata> samplesByAltId = new ArrayList<>();
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_B_3", "C-MPJKLE-P002-d"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_F_4", "C-MPJKLE-R002-d02"));
+        samplesByAltId.add(getSampleWithPrimaryIdAndLabel("12345_C_6", "C-MPJKLE-N002-d02"));
+
+        String resolvedSampleType = cmoLabelGeneratorService.resolveSampleTypeAbbrevWithContext(
+                primaryId, sampleTypeAbbrev, samplesByAltId);
+        Assertions.assertEquals("L", resolvedSampleType);
+    }
+
+    @Test
+    public void testAltIdUniqueBySampleTypeNoSamplesByAltId() throws Exception {
+        String primaryId = "12345_C_6";
+        String sampleTypeAbbrev = "L";
+
+        String resolvedSampleType = cmoLabelGeneratorService.resolveSampleTypeAbbrevWithContext(
+                primaryId, sampleTypeAbbrev, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("L", resolvedSampleType);
+    }
+
+    @Test
+    public void testLabelDoesNotRequireUpdate() throws Exception {
+        String newLabel = "C-MPJKLE-T002-d01";
+        String existingLabel = "C-MPJKLE-P002-d";
+        Boolean requiresUpdate = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(newLabel,
+                existingLabel);
+        Assertions.assertFalse(requiresUpdate);
+    }
+
+    @Test
+    public void testLabelRequiresUpdate() throws Exception {
+        String newLabel = "C-MPJKLE-N002-d01";
+        String existingLabel = "C-MPJKLE-P002-d";
+        Boolean requiresUpdate = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(newLabel,
+                existingLabel);
+        Assertions.assertTrue(requiresUpdate);
+    }
+
+    private SampleMetadata getSampleWithPrimaryIdAndLabel(String primaryId, String cmoLabel) {
+        SampleMetadata s = new SampleMetadata();
+        s.setPrimaryId(primaryId);
+        s.setCmoSampleName(cmoLabel);
+        return s;
     }
 
     private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
