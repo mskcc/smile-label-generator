@@ -344,7 +344,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
         // get next increment for nucleic acid abbreviation
         Integer nextNucAcidCounter = resolveNextNucleicAcidIncrement(sampleManifest.getIgoId(),
-                nucleicAcidAbbreviation, samplesByAltId);
+                resolvedSampleTypeAbbrev, nucleicAcidAbbreviation, samplesByAltId);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
@@ -366,12 +366,12 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // resolve sample type abbreviation
         String sampleTypeAbbrev = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
                 sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType());
-        String resolvedSampleTypeAbbreviation = resolveSampleTypeAbbrevWithContext(
+        String resolvedSampleTypeAbbrev = resolveSampleTypeAbbrevWithContext(
                 sampleMetadata.getPrimaryId(), sampleTypeAbbrev, samplesByAltId);
 
         // resolve the sample counter value to use for the cmo label
         Integer sampleCounter =  resolveSampleIncrementValue(sampleMetadata.getPrimaryId(),
-                existingSamples, samplesByAltId, resolvedSampleTypeAbbreviation);
+                existingSamples, samplesByAltId, resolvedSampleTypeAbbrev);
         String paddedSampleCounter = getPaddedIncrementString(sampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
@@ -388,13 +388,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
         // get next increment for nucleic acid abbreviation
         Integer nextNucAcidCounter = resolveNextNucleicAcidIncrement(sampleMetadata.getPrimaryId(),
-                nucleicAcidAbbreviation, samplesByAltId);
+                resolvedSampleTypeAbbrev, nucleicAcidAbbreviation, samplesByAltId);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
         String patientId = sampleMetadata.getCmoPatientId();
 
-        return getFormattedCmoSampleLabel(patientId, resolvedSampleTypeAbbreviation, paddedSampleCounter,
+        return getFormattedCmoSampleLabel(patientId, resolvedSampleTypeAbbrev, paddedSampleCounter,
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
     }
 
@@ -612,6 +612,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             for (SampleMetadata sample : samplesByAltId) {
                 Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
                 if (matcher.find()) {
+                    String stAbbrev = parseSampleTypeAbbrevFromCmoLabel(sample.getCmoSampleName());
+                    if (!isSameKindOfSampleTypeAbbreviation(resolvedSampleTypeAbbrev, stAbbrev)) {
+                        continue;
+                    }
+
                     try {
                         Integer increment = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
                         altIdSampleCounters.add(increment);
@@ -740,8 +745,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @param samples
      * @return Set
      */
-    private Set<Integer> parseMatchingNucleicAcidCountersFromSampleLabels(String nucAcidAbbrev,
-            List<SampleMetadata> samples) {
+    private Set<Integer> parseMatchingNucleicAcidCountersFromSampleLabels(String stAbbrev,
+            String nucAcidAbbrev, List<SampleMetadata> samples) {
         Set<Integer> nucAcidCountersByAltId = new HashSet<>();
         for (SampleMetadata sample : samples) {
             // ignore samples with empty cmo sample labels
@@ -758,8 +763,18 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             if (!matcher.find()) {
                 continue;
             }
+            // skip labels that do not match the input sample type abbreviation
+            // note: this is a specific check on an exact same sample type abbreviation as opposed to the
+            // same KIND of sample type abbreviation (meaning that all tumor types of sample type
+            // abbreviations are treated the same)
+            // if this needs to change then simply replace the check here with a call to
+            // isSameKindOfSampleTypeAbbreviation(stAbbrev, currentSampleTypeAbbrev)
+            String currentSampleTypeAbbrev = parseSampleTypeAbbrevFromCmoLabel(sample.getCmoSampleName());
+            if (!currentSampleTypeAbbrev.equals(stAbbrev)) {
+                continue;
+            }
 
-            // skip labels that do not match the current nucleic acid abbreviation
+            // skip labels that do not match the input nucleic acid abbreviation
             String currentNucAcidAbbreviation = matcher.group(CMO_SAMPLE_NUCACID_ABBREV_GROUP);
             if (!currentNucAcidAbbreviation.equals(nucAcidAbbrev)) {
                 continue;
@@ -784,7 +799,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @param nucAcidAbbrev
      * @return Integer
      */
-    private Integer resolveNextNucleicAcidIncrement(String primaryId, String nucAcidAbbrev,
+    private Integer resolveNextNucleicAcidIncrement(String primaryId, String stAbbrev, String nucAcidAbbrev,
             List<SampleMetadata> samplesByAltId) {
         // if there aren't any samples matching by alt id then return 1 by default since the nucleic acid
         // counter should be resolved on a per-unique sample (alt id) basis and not by the total
@@ -795,13 +810,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // parse nuc acid counters from sample labels matching the same nucleic acid type
         Set<Integer> nucAcidCountersByAltId
-                = parseMatchingNucleicAcidCountersFromSampleLabels(nucAcidAbbrev, samplesByAltId);
+                = parseMatchingNucleicAcidCountersFromSampleLabels(stAbbrev, nucAcidAbbrev, samplesByAltId);
 
         // easy scenario: length of matching samples given an alt id is 1 and sample matches the
         // primary id of the sample currently being interrogated then return nucleic acid counter as 1
-        if (samplesByAltId.size() == 1 && samplesByAltId.get(0).getPrimaryId().equals(primaryId)
-                || (nucAcidCountersByAltId.size() == 1
-                && !Collections.min(nucAcidCountersByAltId).equals(1))) {
+        if (samplesByAltId.size() == 1 && samplesByAltId.get(0).getPrimaryId().equals(primaryId)) {
             return 1;
         }
 
@@ -815,15 +828,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @return Integer
      */
     private Integer getNextNucleicAcidIncrement(Set<Integer> counters) {
-        if (counters.isEmpty()) {
+        if (counters.isEmpty() || Collections.min(counters) != 1) {
             return 1;
-        }
-        if (counters.size() == 1) {
-            if (Collections.min(counters) != 1) {
-                return 1;
-            } else {
-                return 2;
-            }
         }
 
         List<Integer> sortedCounters = Arrays.asList(counters.toArray(Integer[]::new));
