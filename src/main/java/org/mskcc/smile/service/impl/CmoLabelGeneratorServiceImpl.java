@@ -104,8 +104,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         map.put(CmoSampleClass.RECURRENCE, "T");
         map.put(CmoSampleClass.METASTASIS, "T");
         map.put(CmoSampleClass.NORMAL, "N");
-        map.put(CmoSampleClass.ADJACENT_NORMAL, "A");
-        map.put(CmoSampleClass.ADJACENT_TISSUE, "T");
+        map.put(CmoSampleClass.ADJACENT_NORMAL, "N");
+        map.put(CmoSampleClass.ADJACENT_TISSUE, "A");
         return map;
     }
 
