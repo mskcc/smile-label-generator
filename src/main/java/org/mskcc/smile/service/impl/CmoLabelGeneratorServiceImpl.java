@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -780,16 +781,29 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 continue;
             }
 
-            Integer currentIncrement;
-            if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
-                    || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
-                currentIncrement = 1;
-            } else {
-                currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+            Integer currentIncrement = parseNucleicAcidCounterFromLabel(sample.getCmoSampleName());
+            if (currentIncrement != null) {
+                nucAcidCountersByAltId.add(currentIncrement);
             }
-            nucAcidCountersByAltId.add(currentIncrement);
         }
         return nucAcidCountersByAltId;
+    }
+
+    private Integer parseNucleicAcidCounterFromLabel(String cmoLabel) {
+        // if sample cmo label does not meet matcher criteria then skip
+        Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(cmoLabel);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        Integer currentIncrement;
+        if (matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP) == null
+                || matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP).isEmpty()) {
+            currentIncrement = 1;
+        } else {
+            currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_NUCACID_COUNTER_GROUP));
+        }
+        return currentIncrement;
     }
 
     /**
@@ -812,6 +826,14 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Set<Integer> nucAcidCountersByAltId
                 = parseMatchingNucleicAcidCountersFromSampleLabels(stAbbrev, nucAcidAbbrev, samplesByAltId);
 
+        // if primary id exists in the set of samples by alt id then store nuc acid counter for reference
+        Integer existingNucAcidCounter = null;
+        for (SampleMetadata s : samplesByAltId) {
+            if (s.getPrimaryId().equals(primaryId)) {
+                existingNucAcidCounter = parseNucleicAcidCounterFromLabel(s.getCmoSampleName());
+            }
+        }
+
         // easy scenario: length of matching samples given an alt id is 1 and sample matches the
         // primary id of the sample currently being interrogated then return nucleic acid counter as 1
         if (samplesByAltId.size() == 1 && samplesByAltId.get(0).getPrimaryId().equals(primaryId)) {
@@ -819,7 +841,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         }
 
         // for all other scenarios, resolve next consecutive counter from the parsed set of counters
-        return getNextNucleicAcidIncrement(nucAcidCountersByAltId);
+        return getNextNucleicAcidIncrement(nucAcidCountersByAltId, existingNucAcidCounter);
     }
 
     /**
@@ -827,7 +849,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @param counters
      * @return Integer
      */
-    private Integer getNextNucleicAcidIncrement(Set<Integer> counters) {
+    private Integer getNextNucleicAcidIncrement(Set<Integer> counters, Integer existingNucAcidCounter) {
         if (counters.isEmpty() || Collections.min(counters) != 1) {
             return 1;
         }
@@ -839,11 +861,21 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         for (int i = 1; i < sortedCounters.size(); i++) {
             Integer currentCounter = sortedCounters.get(i);
             Integer prevCounter = sortedCounters.get(i - 1);
+
+            // if the difference between the counters is > 1 then return the prev counter + 1
             if ((currentCounter - prevCounter) > 1) {
                 return prevCounter + 1;
-            } else {
-                refCounter = currentCounter;
             }
+
+            // if the current counter matches the existing nuc acid counter
+            // then return since the current counter is +1 from the prev counter
+            // and therefore is already the next consecutive integer
+            if (existingNucAcidCounter != null && Objects.equals(existingNucAcidCounter, currentCounter)) {
+                return existingNucAcidCounter;
+            }
+
+            // move onto the next counter in the list
+            refCounter = currentCounter;
         }
         return refCounter + 1;
     }

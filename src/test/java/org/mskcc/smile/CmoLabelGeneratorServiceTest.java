@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -337,20 +338,16 @@ public class CmoLabelGeneratorServiceTest {
     @Test
     public void testNextConsecutiveCounter() throws Exception {
         Set<Integer> counters = new HashSet<>(Arrays.asList(1, 2, 7));
-        Integer nextConsecutiveInt = getNextNucleicAcidIncrement(counters);
-        Assertions.assertEquals(3, nextConsecutiveInt);
+        Integer nextConsecutiveInt1 = getNextNucleicAcidIncrement(counters, null);
+        Assertions.assertEquals(3, nextConsecutiveInt1);
+
+        Integer nextConsecutiveInt2 = getNextNucleicAcidIncrement(counters, 2);
+        Assertions.assertEquals(2, nextConsecutiveInt2);
     }
 
-    private Integer getNextNucleicAcidIncrement(Set<Integer> counters) {
-        if (counters.isEmpty()) {
+    private Integer getNextNucleicAcidIncrement(Set<Integer> counters, Integer existingNucAcidCounter) {
+        if (counters.isEmpty() || Collections.min(counters) != 1) {
             return 1;
-        }
-        if (counters.size() == 1) {
-            if (Collections.min(counters) != 1) {
-                return 1;
-            } else {
-                return 2;
-            }
         }
 
         List<Integer> sortedCounters = Arrays.asList(counters.toArray(Integer[]::new));
@@ -360,11 +357,21 @@ public class CmoLabelGeneratorServiceTest {
         for (int i = 1; i < sortedCounters.size(); i++) {
             Integer currentCounter = sortedCounters.get(i);
             Integer prevCounter = sortedCounters.get(i - 1);
+
+            // if the difference between the counters is > 1 then return the prev counter + 1
             if ((currentCounter - prevCounter) > 1) {
                 return prevCounter + 1;
-            } else {
-                refCounter = currentCounter;
             }
+
+            // if the current counter matches the existing nuc acid counter
+            // then return since the current counter is +1 from the prev counter
+            // and therefore is already the next consecutive integer
+            if (existingNucAcidCounter != null && Objects.equals(existingNucAcidCounter, currentCounter)) {
+                return existingNucAcidCounter;
+            }
+
+            // move onto the next counter in the list
+            refCounter = currentCounter;
         }
         return refCounter + 1;
     }
