@@ -98,6 +98,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      */
     private static Map<CmoSampleClass, String> initCmoSampleClassAbbrevMap() {
         Map<CmoSampleClass, String> map = new HashMap<>();
+        map.put(CmoSampleClass.TUMOR, "T");
         map.put(CmoSampleClass.UNKNOWN_TUMOR, "T");
         map.put(CmoSampleClass.LOCAL_RECURRENCE, "T");
         map.put(CmoSampleClass.PRIMARY, "T");
