@@ -479,9 +479,9 @@ public class CmoLabelGeneratorServiceTest {
     @Test
     public void testUpdateToSampleType() throws Exception {
         SampleMetadata sample1ExistingData = initSampleMetadata("SAMPLE_A_1", "C-BRC0DE-F001-d01",
-                "C-BRC0DE", "ABC-123", "", "Non-PDX", NucleicAcid.DNA);
+                "C-BRC0DE", "ABC-123", "", "Non-PDX", NucleicAcid.DNA, "Tissue");
         SampleMetadata sample2ExistingData = initSampleMetadata("SAMPLE_A_4", "C-BRC0DE-F002-d01",
-                "C-BRC0DE", "ABC-456", "", "Non-PDX", NucleicAcid.DNA);
+                "C-BRC0DE", "ABC-456", "", "Non-PDX", NucleicAcid.DNA, "Tissue");
         List<SampleMetadata> samplesByAltId123 = Arrays.asList(sample1ExistingData);
         List<SampleMetadata> existingPatientSamples
                 = Arrays.asList(sample1ExistingData, sample2ExistingData);
@@ -489,7 +489,7 @@ public class CmoLabelGeneratorServiceTest {
         // say that sample 1 gets an update that corrects its missing sample type with 'Unknown Tumor'
         // --> this should generate the label: C-BRC0DE-T001-d01
         SampleMetadata sample1UpdatedData = initSampleMetadata("SAMPLE_A_1", "", "C-BRC0DE", "ABC-123",
-                "Unknown Tumor", "Non-PDX", NucleicAcid.DNA);
+                "Unknown Tumor", "Non-PDX", NucleicAcid.DNA, "Tissue");
         String sample1UpdatedLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample1UpdatedData,
                 existingPatientSamples, samplesByAltId123);
         Assertions.assertEquals("C-BRC0DE-T001-d01", sample1UpdatedLabel);
@@ -500,7 +500,7 @@ public class CmoLabelGeneratorServiceTest {
         // --> this should generate the label C-BRC0DE-N001-d01
         List<SampleMetadata> samplesByAltId456 = Arrays.asList(sample2ExistingData);
         SampleMetadata sample2UpdatedData = initSampleMetadata("SAMPLE_A_4", "", "C-BRC0DE", "ABC-456",
-                "Normal", "Non-PDX", NucleicAcid.DNA);
+                "Normal", "Non-PDX", NucleicAcid.DNA, "Whole Blood");
         String sample2UpdatedLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample2UpdatedData,
                 updatedPatientSamples, samplesByAltId456);
         Assertions.assertEquals("C-BRC0DE-N001-d01", sample2UpdatedLabel);
@@ -512,18 +512,62 @@ public class CmoLabelGeneratorServiceTest {
         List<SampleMetadata> newUpdatedPatientSamples
                 = Arrays.asList(sample1UpdatedData, sample2UpdatedData);
         SampleMetadata newTumorSample = initSampleMetadata("SAMPLE_B_1", "", "C-BRC0DE", "ABC-789",
-                "Unknown Tumor", "Non-PDX", NucleicAcid.DNA);
+                "Unknown Tumor", "Non-PDX", NucleicAcid.DNA, "Tissue");
         String newTumorLabel = cmoLabelGeneratorService.generateCmoSampleLabel(newTumorSample,
                 newUpdatedPatientSamples, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-BRC0DE-T002-d01", newTumorLabel);
     }
 
-    private SampleMetadata getSampleWithPrimaryIdAndLabel(String primaryId, String cmoSampleName) {
-        return initSampleMetadata(primaryId, cmoSampleName, null, null, null, null, NucleicAcid.DNA);
+    /**
+     * Tests various combinations of sample type, sample class, and sample origin still resolve
+     * to expected sample type abbreviations following updates to the logic that applies to cfDNA samples.
+     * @throws Exception
+     */
+    @Test
+    public void testExpandedCellFreeDnaRules() throws Exception {
+        // sample type abbreviation expected to resolve to L
+        SampleMetadata sm1 = initSampleMetadata("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "Unknown Tumor", "cfDNA", NucleicAcid.DNA, "Plasma");
+        String label1 = cmoLabelGeneratorService.generateCmoSampleLabel(sm1,
+                DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("C-BRCD03-L001-d01", label1);
+
+        // sample type abbreviation expected to resolve to L
+        SampleMetadata sm2 = initSampleMetadata("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "cfDNA", "Non-PDX", NucleicAcid.DNA, "Whole Blood");
+        String label2 = cmoLabelGeneratorService.generateCmoSampleLabel(sm2,
+                DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("C-BRCD03-L001-d01", label2);
+
+        // sample type abbreviation expected to resolve to F
+        SampleMetadata sm3 = initSampleMetadata("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "cfDNA", "Non-PDX", NucleicAcid.DNA, "");
+        String label3 = cmoLabelGeneratorService.generateCmoSampleLabel(sm3,
+                DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("C-BRCD03-F001-d01", label3);
+
+        // sample type abbreviation expected to resolve to T
+        SampleMetadata sm4 = initSampleMetadata("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "Unknown Tumor", "Non-PDX", NucleicAcid.DNA, "Urine");
+        String label4 = cmoLabelGeneratorService.generateCmoSampleLabel(sm4,
+                DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("C-BRCD03-T001-d01", label4);
+
+        // sample type abbreviation expected to resolve to U
+        SampleMetadata sm5 = initSampleMetadata("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "cfDNA", "Non-PDX", NucleicAcid.DNA, "Urine");
+        String label5 = cmoLabelGeneratorService.generateCmoSampleLabel(sm5,
+                DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("C-BRCD03-U001-d01", label5);
     }
 
-    private SampleMetadata initSampleMetadata(String primaryId, String cmoSampleName, String cmoPatientId,
-            String altId, String sampleType, String sampleClass, NucleicAcid naToExtract) {
+    private SampleMetadata getSampleWithPrimaryIdAndLabel(String primaryId, String cmoSampleName) {
+        return initSampleMetadata(primaryId, cmoSampleName, null, null, null, null, NucleicAcid.DNA, null);
+    }
+
+    private SampleMetadata initSampleMetadata(String primaryId, String cmoSampleName,
+            String cmoPatientId, String altId, String sampleType, String sampleClass,
+            NucleicAcid naToExtract, String sampleOrigin) {
         SampleMetadata sample = new SampleMetadata();
         sample.setPrimaryId(primaryId);
         sample.setCmoPatientId(cmoPatientId);
@@ -531,6 +575,7 @@ public class CmoLabelGeneratorServiceTest {
         sample.addAdditionalProperty("altId", altId);
         sample.setSampleType(sampleType);
         sample.setSampleClass(sampleClass);
+        sample.setSampleOrigin(sampleOrigin);
         Map<String, String> cmoSampleIdFields = new HashMap<>();
         cmoSampleIdFields.put("naToExtract", naToExtract.getValue());
         cmoSampleIdFields.put("normalizedPatientId", cmoPatientId);

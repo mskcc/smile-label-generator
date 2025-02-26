@@ -523,28 +523,38 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     @Override
     public String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
             String cmoSampleClassValue) {
+
+        // check if specimen type has valid mapping first
+        SpecimenType specimenType = null;
         try {
-            SpecimenType specimenType = SpecimenType.fromValue(specimenTypeValue);
+            specimenType = SpecimenType.fromValue(specimenTypeValue);
             // if can be mapped directly from specimen type then use corresponding abbreviation
             if (SPECIMEN_TYPE_ABBREV_MAP.containsKey(specimenType)) {
                 return SPECIMEN_TYPE_ABBREV_MAP.get(specimenType);
             }
-            // if specimen type is cfDNA and sample origin is known type for cfDNA samples
-            // then return corresponding abbreviation
+        } catch (Exception e) {
+            LOG.warn("Could not resolve sample type abbreviation directly from 'specimenType': "
+                    + specimenTypeValue + ". Attempting from sample origin and sample class.");
+        }
+
+        // if no direct specimen type mapping then check sample origin and sample class
+        try {
             SampleOrigin sampleOrigin = SampleOrigin.fromValue(sampleOriginValue);
             if (sampleOrigin != null) {
-                if (specimenType.equals(SpecimenType.CFDNA)
+                if (((specimenType != null && specimenType.equals(SpecimenType.CFDNA))
+                        || cmoSampleClassValue.equals("cfDNA"))
                         && KNOWN_CFDNA_SAMPLE_ORIGINS.contains(sampleOrigin)) {
                     return SAMPLE_ORIGIN_ABBREV_MAP.get(sampleOrigin);
                 }
                 // if specimen type is exosome then map abbreviation from sample origin or use default value
-                if (specimenType.equals(SpecimenType.EXOSOME)) {
+                if (specimenType != null && specimenType.equals(SpecimenType.EXOSOME)) {
                     return SAMPLE_ORIGIN_ABBREV_MAP.getOrDefault(sampleOrigin, SAMPLE_ORIGIN_ABBREV_DEFAULT);
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not resolve specimen type from 'specimenType': "
-                    + specimenTypeValue + ". Attempting from sample class.");
+            LOG.warn("Could not resolve sample type abbreviation directly from 'sampleOrigin': "
+                    + sampleOriginValue + " and 'sampleClass': " + cmoSampleClassValue
+                    + " combination. Attempting from just sample class.");
         }
 
         // if abbreviation is still not resolved then try to resolve from sample class
