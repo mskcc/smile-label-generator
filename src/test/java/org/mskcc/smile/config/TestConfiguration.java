@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.mskcc.smile.commons.FileUtil;
 import org.mskcc.smile.model.MockJsonTestData;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.mskcc.smile.service.impl.CmoLabelGeneratorServiceImpl;
@@ -36,14 +35,6 @@ public class TestConfiguration {
     @Autowired
     private void setMockJsonTestDataResource() {
         this.mockJsonTestDataResource = new ClassPathResource(MOCKED_JSON_DATA_DIR);
-    }
-
-    @Autowired
-    private FileUtil fileUtil;
-
-    @Bean
-    public FileUtil fileUtil() {
-        return fileUtil;
     }
 
     @Bean

@@ -33,6 +33,3 @@ request_reply.samples_by_alt_id_topic=
 num.new_request_handler_threads=
 num.promoted_request_handler_threads=
 
-# publishing failures filepath
-smile.publishing_failures_filepath=
-
