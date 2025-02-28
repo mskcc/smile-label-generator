@@ -23,7 +23,7 @@ public interface CmoLabelGeneratorService {
             List<SampleMetadata> samplesByAltId) throws JsonProcessingException;
     Boolean igoSampleRequiresLabelUpdate(String newCmoLabel, String existingCmoLabel);
     String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
-            String cmoSampleClassValue);
+            String cmoSampleClassValue, String sampleTypeDetailedValue);
     String resolveSampleTypeAbbrevWithContext(String primaryId, String resolvedSampleTypeAbbrev,
             List<SampleMetadata> samplesByAltId);
     String generateValidationReport(String originalJson, String filteredJson, Boolean isSample)
