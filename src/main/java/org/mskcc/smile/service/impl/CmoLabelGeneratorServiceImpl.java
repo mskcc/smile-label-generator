@@ -367,7 +367,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // resolve sample type abbreviation
         String sampleTypeAbbrev = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
-                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType());
+                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType(),
+                sampleMetadata.getCmoSampleIdFields().get("sampleType"));
         String resolvedSampleTypeAbbrev = resolveSampleTypeAbbrevWithContext(
                 sampleMetadata.getPrimaryId(), sampleTypeAbbrev, samplesByAltId);
 
@@ -434,7 +435,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         Map<String, String> validationReport = new HashMap<>();
 
         String sampleTypeAbbreviation = resolveSampleTypeAbbreviation(sampleMetadata.getSampleClass(),
-                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType());
+                sampleMetadata.getSampleOrigin(), sampleMetadata.getSampleType(),
+                sampleMetadata.getCmoSampleIdFields().get("sampleType"));
         if (sampleTypeAbbreviation == null
                 || sampleTypeAbbreviation.equals("F")) {
             validationReport.put("sample type abbreviation",
@@ -462,10 +464,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
     }
 
-    private String resolveNucleicAcidAbbreviation(String sampleTypeString,
+    private String resolveNucleicAcidAbbreviation(String sampleTypeDetailedString,
             String recipe, String naToExtract) {
         try {
-            SampleType sampleType = SampleType.fromString(sampleTypeString);
+            SampleType sampleType = SampleType.fromString(sampleTypeDetailedString);
             // resolve from sample type if not null
             // if pooled library then resolve value based on recipe
             switch (sampleType) {
@@ -514,15 +516,15 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      * @return
      */
     private String resolveNucleicAcidAbbreviation(IgoSampleManifest sampleManifest) {
-        String sampleTypeString = sampleManifest.getCmoSampleIdFields().get("sampleType");
+        String sampleTypeDetailedString = sampleManifest.getCmoSampleIdFields().get("sampleType");
         String recipe = sampleManifest.getCmoSampleIdFields().get("recipe");
         String naToExtract = sampleManifest.getCmoSampleIdFields().get("naToExtract");
-        return resolveNucleicAcidAbbreviation(sampleTypeString, recipe, naToExtract);
+        return resolveNucleicAcidAbbreviation(sampleTypeDetailedString, recipe, naToExtract);
     }
 
     @Override
     public String resolveSampleTypeAbbreviation(String specimenTypeValue, String sampleOriginValue,
-            String cmoSampleClassValue) {
+            String cmoSampleClassValue, String sampleTypeDetailedValue) {
 
         // check if specimen type has valid mapping first
         SpecimenType specimenType = null;
@@ -542,12 +544,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             SampleOrigin sampleOrigin = SampleOrigin.fromValue(sampleOriginValue);
             if (sampleOrigin != null) {
                 if (((specimenType != null && specimenType.equals(SpecimenType.CFDNA))
-                        || cmoSampleClassValue.equals("cfDNA"))
+                        || (sampleTypeDetailedValue != null && sampleTypeDetailedValue.equals("cfDNA")))
                         && KNOWN_CFDNA_SAMPLE_ORIGINS.contains(sampleOrigin)) {
                     return SAMPLE_ORIGIN_ABBREV_MAP.get(sampleOrigin);
                 }
                 // if specimen type is exosome then map abbreviation from sample origin or use default value
-                if (specimenType != null && specimenType.equals(SpecimenType.EXOSOME)) {
+                if ((specimenType != null && specimenType.equals(SpecimenType.EXOSOME))
+                        || (sampleTypeDetailedValue != null && sampleTypeDetailedValue.equals("Exosome"))) {
                     return SAMPLE_ORIGIN_ABBREV_MAP.getOrDefault(sampleOrigin, SAMPLE_ORIGIN_ABBREV_DEFAULT);
                 }
             }
@@ -586,7 +589,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     private String resolveSampleTypeAbbreviation(IgoSampleManifest sampleManifest,
             List<SampleMetadata> samplesByAltId) {
         String sampleTypeAbbrev = resolveSampleTypeAbbreviation(sampleManifest.getSpecimenType(),
-                sampleManifest.getSampleOrigin(), sampleManifest.getCmoSampleClass());
+                sampleManifest.getSampleOrigin(), sampleManifest.getCmoSampleClass(),
+                sampleManifest.getCmoSampleIdFields().get("sampleType"));
         return resolveSampleTypeAbbrevWithContext(
                 sampleManifest.getIgoId(), sampleTypeAbbrev, samplesByAltId);
     }
