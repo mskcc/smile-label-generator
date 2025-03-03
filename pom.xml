@@ -42,7 +42,7 @@
     <smile_commons.version>2.0.5.RELEASE</smile_commons.version>
     <!-- smile server model module -->
     <smile_server.group>com.github.mskcc.smile-server</smile_server.group>
-    <smile_server.version>2.1.5.RELEASE</smile_server.version>
+    <smile_server.version>2.1.6.RELEASE</smile_server.version>
   </properties>
 
   <dependencies>
