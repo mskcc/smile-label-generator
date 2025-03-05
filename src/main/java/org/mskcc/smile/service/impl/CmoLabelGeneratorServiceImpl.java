@@ -650,14 +650,15 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     }
                 }
             }
-            if (altIdSampleCounters.isEmpty()) {
+            if (altIdSampleCounters.isEmpty() && (existingSamples != null && existingSamples.isEmpty())) {
                 LOG.warn("Could not resolve sample counters from any of the samples matching the same "
-                        + "ALT ID - returning counter as 1 by default");
+                        + "ALT ID and there are no existing samples for the matching patient "
+                        + "- returning counter as 1 by default");
                 return 1;
             }
             if (altIdSampleCounters.size() == 1) {
                 return altIdSampleCounters.get(0);
-            } else {
+            } else if (altIdSampleCounters.size() > 1) {
                 return Collections.min(altIdSampleCounters);
             }
         }
@@ -668,8 +669,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             if (sample.getPrimaryId().equalsIgnoreCase(primaryId)) {
                 Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
                 if (matcher.find()) {
-                    Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
-                    return currentIncrement;
+                    String stAbbrev = parseSampleTypeAbbrevFromCmoLabel(sample.getCmoSampleName());
+                    if (isSameKindOfSampleTypeAbbreviation(resolvedSampleTypeAbbrev, stAbbrev)) {
+                        Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                        return currentIncrement;
+                    }
                 }
             }
         }
