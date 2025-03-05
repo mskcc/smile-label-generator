@@ -559,6 +559,13 @@ public class CmoLabelGeneratorServiceTest {
         String label5 = cmoLabelGeneratorService.generateCmoSampleLabel(sm5,
                 DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-BRCD03-T001-d01", label5);
+
+        // sample type abbreviation expected to resolve to F
+        SampleMetadata sm6 = initSampleMetadata("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "Unknown Tumor", "Non-PDX", NucleicAcid.DNA, "",  "cfDNA");
+        String label6 = cmoLabelGeneratorService.generateCmoSampleLabel(sm6,
+                DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
+        Assertions.assertEquals("C-BRCD03-L001-d01", label6);
     }
 
     private SampleMetadata getSampleWithPrimaryIdAndLabel(String primaryId, String cmoSampleName) {

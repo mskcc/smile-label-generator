@@ -62,6 +62,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     SampleOrigin.CEREBROSPINAL_FLUID,
                     SampleOrigin.PLASMA,
                     SampleOrigin.WHOLE_BLOOD);
+    private static final String CFDNA_ABBREV_DEFAULT = "L";
     private static final String SAMPLE_ORIGIN_ABBREV_DEFAULT = "T";
     private static final Set<String> SAMPLE_TYPE_TUMOR_ABBREVIATIONS
             = new HashSet<>(Arrays.asList("P", "M", "R", "T"));
@@ -566,6 +567,13 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             CmoSampleClass sampleClass = CmoSampleClass.fromValue(cmoSampleClassValue);
             if (SAMPLE_CLASS_ABBREV_MAP.containsKey(sampleClass)) {
                 sampleTypeAbbreviation = SAMPLE_CLASS_ABBREV_MAP.get(sampleClass);
+            }
+            // if sample type abbreviation at this point is not normal and sample type detailed is cfDNA
+            // then return cfDNA abbreviation (L)
+            if (((specimenType != null && specimenType.equals(SpecimenType.CFDNA))
+                    || (sampleTypeDetailedValue != null && sampleTypeDetailedValue.equals("cfDNA")))
+                    && !sampleTypeAbbreviation.equals("N")) {
+                return CFDNA_ABBREV_DEFAULT;
             }
         } catch (Exception e) {
             // happens if cmoSampleClassValue is not found in CmoSampleClass
