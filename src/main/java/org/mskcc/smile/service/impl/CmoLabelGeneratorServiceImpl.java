@@ -634,6 +634,9 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         if (!samplesByAltId.isEmpty()) {
             List<Integer> altIdSampleCounters = new ArrayList<>();
             for (SampleMetadata sample : samplesByAltId) {
+                if (StringUtils.isBlank(sample.getCmoSampleName())) {
+                    continue;
+                }
                 Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
                 if (matcher.find()) {
                     String stAbbrev = parseSampleTypeAbbrevFromCmoLabel(sample.getCmoSampleName());
