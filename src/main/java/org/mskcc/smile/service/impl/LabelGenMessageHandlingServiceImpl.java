@@ -538,6 +538,10 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         // matching sample identified if applicable - otherwise use the newly generated label
         Boolean updateRequired = Boolean.FALSE;
         if (matchingSample != null) {
+            // if matching sample cmo label is blank then return new label by default
+            if (StringUtils.isBlank(matchingSample.getCmoSampleName())) {
+                return newCmoSampleLabel;
+            }
             try {
                 updateRequired = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
                         newCmoSampleLabel, matchingSample.getCmoSampleName());
