@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -668,18 +669,25 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
 
         // if we find a match by the primary id then return the increment parsed from
         // the matching sample's current cmo label
-        for (SampleMetadata sample : existingSamples) {
-            if (sample.getPrimaryId().equalsIgnoreCase(primaryId)) {
-                Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
-                if (matcher.find()) {
-                    String stAbbrev = parseSampleTypeAbbrevFromCmoLabel(sample.getCmoSampleName());
-                    if (isSameKindOfSampleTypeAbbreviation(resolvedSampleTypeAbbrev, stAbbrev)) {
-                        Integer currentIncrement = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
-                        return currentIncrement;
+        if (existingSamples != null && !existingSamples.isEmpty()) {
+            for (SampleMetadata sample : existingSamples) {
+                if (sample.getPrimaryId().equalsIgnoreCase(primaryId)) {
+                    if (StringUtils.isBlank(sample.getCmoSampleName())) {
+                        continue;
+                    }
+                    Matcher matcher = CMO_SAMPLE_ID_REGEX.matcher(sample.getCmoSampleName());
+                    if (matcher.find()) {
+                        String stAbbrev = parseSampleTypeAbbrevFromCmoLabel(sample.getCmoSampleName());
+                        if (isSameKindOfSampleTypeAbbreviation(resolvedSampleTypeAbbrev, stAbbrev)) {
+                            Integer currentIncrement
+                                    = Integer.valueOf(matcher.group(CMO_SAMPLE_COUNTER_GROUP));
+                            return currentIncrement;
+                        }
                     }
                 }
             }
         }
+
 
         // if there aren't any existing samples by the same alt id then this is a new sample specimen for the
         // current patient so the sample increment for the sample cmo label will be based on number of other
@@ -695,7 +703,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      */
     private Integer getNextSampleIncrement(List<SampleMetadata> samples, String resolvedSampleTypeAbbrev) {
         // return 1 if samples is empty
-        if (samples.isEmpty()) {
+        if (samples == null || samples.isEmpty()) {
             return 1;
         }
         // otherwise extract the max counter from the current set of samples
