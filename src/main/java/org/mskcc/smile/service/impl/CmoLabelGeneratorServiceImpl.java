@@ -867,7 +867,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         // if primary id exists in the set of samples by alt id then store nuc acid counter for reference
         Integer existingNucAcidCounter = null;
         for (SampleMetadata s : samplesByAltId) {
-            if (s.getPrimaryId().equals(primaryId)) {
+            if (s.getPrimaryId().equals(primaryId) && !StringUtils.isBlank(s.getCmoSampleName())) {
                 existingNucAcidCounter = parseNucleicAcidCounterFromLabel(s.getCmoSampleName());
             }
         }
