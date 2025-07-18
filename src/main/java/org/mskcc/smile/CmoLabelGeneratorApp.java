@@ -12,7 +12,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = {"org.mskcc.cmo.messaging",
-        "org.mskcc.smile.commons.*", "org.mskcc.smile.*"})
+    "org.mskcc.smile.commons.*", "org.mskcc.smile.*"})
 public class CmoLabelGeneratorApp implements CommandLineRunner {
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorApp.class);
 
