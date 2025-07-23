@@ -281,11 +281,13 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                             // incoming sample check if that label already exists in smile
                                             // for another sample
                                             if (isCmoLabelAlreadyInUse(sampleManifest.getIgoId(),
-                                                    sampleManifest.getCmoSampleName())) {
+                                                    sampleManifest.getCmoSampleName(),
+                                                    sampleManifest.getAltid())) {
 
                                                 String nextAvailableLabel = findNextAvailableCmoLabel(
                                                         sampleManifest.getIgoId(),
-                                                        sampleManifest.getCmoSampleName());
+                                                        sampleManifest.getCmoSampleName(),
+                                                        sampleManifest.getAltid());
 
                                                 if (nextAvailableLabel == null) {
                                                     LOG.info(makeLogMsgResolvedLabelNotUsing(
@@ -445,11 +447,13 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                         // incoming sample check if that label already exists in smile
                                         // for another sample
                                         if (isCmoLabelAlreadyInUse(sample.getPrimaryId(),
-                                                resolvedCmoSampleLabel)) {
+                                                resolvedCmoSampleLabel,
+                                                sample.getAdditionalProperty("altId"))) {
 
                                             String nextAvailableLabel = findNextAvailableCmoLabel(
                                                             sample.getPrimaryId(),
-                                                            resolvedCmoSampleLabel);
+                                                            resolvedCmoSampleLabel,
+                                                            sample.getAdditionalProperty("altId"));
                                             if (nextAvailableLabel == null) {
                                                 LOG.info(makeLogMsgResolvedLabelNotUsing(
                                                         sample.getPrimaryId(),
@@ -474,13 +478,15 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                                 // doesn't hurt to check to really make sure that this
                                 // label isn't already in use by another sample
                                 if (isCmoLabelAlreadyInUse(sample.getPrimaryId(),
-                                                resolvedCmoSampleLabel)) {
+                                                resolvedCmoSampleLabel,
+                                                sample.getAdditionalProperty("altId"))) {
                                     LOG.info("Resolved label " + resolvedCmoSampleLabel
                                             + " is already in use by another sample. "
                                             + "Using the next available label instead.");
                                     resolvedCmoSampleLabel = findNextAvailableCmoLabel(
                                             sample.getPrimaryId(),
-                                            resolvedCmoSampleLabel);
+                                            resolvedCmoSampleLabel,
+                                            sample.getAdditionalProperty("altId"));
                                 }
                                 // update the sample label for data being sent to smile server
                                 sample.setCmoSampleName(resolvedCmoSampleLabel);
@@ -659,7 +665,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         return new ArrayList<>(Arrays.asList(samplesByAltId));
     }
 
-    private Boolean isCmoLabelAlreadyInUse(String primaryId, String cmoLabel) throws Exception {
+    private Boolean isCmoLabelAlreadyInUse(String primaryId, String cmoLabel, String altId) throws Exception {
         List<SampleMetadata> samplesByCmoLabel = getSamplesByCmoLabel(cmoLabel);
         for (SampleMetadata sm : samplesByCmoLabel) {
             // if there are any samples returned that aren't the same primary id
@@ -868,12 +874,27 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         });
     }
 
-    private String findNextAvailableCmoLabel(String primaryId, String cmoLabel) throws Exception {
-        String incrementedLabel = cmoLabelGeneratorService.incrementNucleicAcidCounter(cmoLabel);
-        while (isCmoLabelAlreadyInUse(primaryId, incrementedLabel)) {
-            incrementedLabel = cmoLabelGeneratorService.incrementNucleicAcidCounter(incrementedLabel);
+    private String findNextAvailableCmoLabel(String primaryId, String cmoLabel,
+            String altId) throws Exception {
+        while (isCmoLabelAlreadyInUse(primaryId, cmoLabel, altId)) {
+            List<SampleMetadata> samplesByCmoLabel = getSamplesByCmoLabel(cmoLabel);
+            for (SampleMetadata sm : samplesByCmoLabel) {
+                // if there are any samples returned that aren't the same primary id
+                // as the one provided then that indicates that the cmo label already exists
+                // in smile and is associated with a different sample
+                // if diff alt ids then increment by sample counter otherwise increment nuc acid counter
+                if (!sm.getPrimaryId().equals(primaryId)) {
+                    String otherAltId = sm.getAdditionalProperty("altId");
+                    if (!StringUtils.isBlank(altId) && !StringUtils.isBlank(otherAltId)
+                            && !altId.equals(otherAltId)) {
+                        cmoLabel = cmoLabelGeneratorService.incrementSampleCounter(cmoLabel);
+                    } else {
+                        cmoLabel = cmoLabelGeneratorService.incrementNucleicAcidCounter(cmoLabel);
+                    }
+                }
+            }
         }
-        return incrementedLabel;
+        return cmoLabel;
     }
 
     private String makeLogMsgExistingCmoLabelNotUsing(String primaryId, String labelNotUsing,

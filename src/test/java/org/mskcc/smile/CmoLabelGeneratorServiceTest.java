@@ -269,6 +269,30 @@ public class CmoLabelGeneratorServiceTest {
     }
 
     /**
+     * Tests the behavior of the sample counter increment method.
+     * @throws Exception
+     */
+    @Test
+    public void testIncrementSampleCounter() throws Exception {
+        // test label increment when nuc acid counter isn't present
+        String legacyLabel = "C-MP789JR-F001-d";
+        String expectedIncrementLegacy = "C-MP789JR-F002-d";
+        String actualIncrementLegacy = cmoLabelGeneratorService.incrementSampleCounter(legacyLabel);
+        Assertions.assertEquals(expectedIncrementLegacy, actualIncrementLegacy);
+
+        // test increment with a non-legacy label
+        String inputLabel = "C-MP789JR-F001-d01";
+        String expectedLabel = "C-MP789JR-F002-d01";
+        String actualLabel = cmoLabelGeneratorService.incrementSampleCounter(inputLabel);
+        Assertions.assertEquals(expectedLabel, actualLabel);
+
+        // test another increment
+        String nextExpectedLabel = "C-MP789JR-F003-d01";
+        String nextActualLabel = cmoLabelGeneratorService.incrementSampleCounter(expectedLabel);
+        Assertions.assertEquals(nextExpectedLabel, nextActualLabel);
+    }
+
+    /**
      * Tests a new sample (new primary id) with an existing alt id and has the
      * same nucleic acid type as the samples matching the alt id.
      * Expected behavior: sample should have the same resolved tumor counter
