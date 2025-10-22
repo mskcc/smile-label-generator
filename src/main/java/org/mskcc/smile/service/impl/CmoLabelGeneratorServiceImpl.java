@@ -120,6 +120,8 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
      *  1. cmo patient id prefix
      *  2. sample type abbreviation
      *  3. nucleic acid abbreviation
+     * Note: if an existing label and the updated label both have sample type abbreviation 'F'
+     *  then keep the existing label since update is not meaningful to begin with
      * @param newCmoLabel
      * @param existingCmoLabel
      * @return Boolean
@@ -155,28 +157,36 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                     + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
             return Boolean.TRUE;
         }
+
         // compare sample type abbreviation
-        if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_TYPE_ABBREV_GROUP)) {
-            String newSampleType = parseSampleTypeAbbrevFromCmoLabel(newCmoLabel);
-            String existingSampleType = parseSampleTypeAbbrevFromCmoLabel(existingCmoLabel);
+        Boolean isMatchingSampleTypeAbbrev = compareMatcherGroups(matcherNewLabel,
+                matcherExistingLabel, CMO_SAMPLE_TYPE_ABBREV_GROUP);
+        String newSampleType = parseSampleTypeAbbrevFromCmoLabel(newCmoLabel);
+        String existingSampleType = parseSampleTypeAbbrevFromCmoLabel(existingCmoLabel);
+        if (!isMatchingSampleTypeAbbrev) {
             if (!isSameKindOfSampleTypeAbbreviation(newSampleType, existingSampleType)) {
                 LOG.info("Sample Type abbreviation differs between incoming IGO sample and matching IGO "
                         + "sample from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
                 return Boolean.TRUE;
             }
+        } else if (isMatchingSampleTypeAbbrev && existingSampleType.equals("F")) {
+            return Boolean.FALSE;
         }
+
         // compare sample counter (may change if alt id numbering corrections are being made)
         if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_COUNTER_GROUP)) {
             LOG.info("Sample Type counter differs between incoming IGO sample and matching IGO sample "
                     + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
             return Boolean.TRUE;
         }
+
         // compare nucleic acid abbreviation
         if (!compareMatcherGroups(matcherNewLabel, matcherExistingLabel, CMO_SAMPLE_NUCACID_ABBREV_GROUP)) {
             LOG.info("Nucleic Acid abbreviation differs between incoming IGO sample and matching IGO sample "
                     + "from database. Sample will be published to IGO_SAMPLE_UPDATE topic.");
             return Boolean.TRUE;
         }
+
         // compare nucleic acid counter (may change if alt id numbering corrections are being made)
         if (!compareNucleicAcidCounterGroups(matcherNewLabel, matcherExistingLabel)) {
             LOG.info("Nucleic Acid counter differs between incoming IGO sample and matching IGO sample "
