@@ -501,6 +501,30 @@ public class CmoLabelGeneratorServiceTest {
     }
 
     @Test
+    public void testSampleTypeFLabelRequiresUpdateChecks() throws Exception {
+        // existing label for comparison
+        String existingLabel = "C-MPJKLE-F002-d01";
+
+        // does not require an update
+        String newLabel1 = "C-MPJKLE-F001-d01";
+        Boolean requiresUpdate1 = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(newLabel1,
+                existingLabel);
+        Assertions.assertFalse(requiresUpdate1);
+
+        // requires an update because sample type T is a meaningful change
+        String newLabel2 = "C-MPJKLE-T001-d01";
+        Boolean requiresUpdate2 = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(newLabel2,
+                existingLabel);
+        Assertions.assertTrue(requiresUpdate2);
+
+        // requires an update because cmo patient id change is meaningful even though sample types are both F
+        String newLabel3 = "C-ABCDEF-F001-d01";
+        Boolean requiresUpdate3 = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(newLabel3,
+                existingLabel);
+        Assertions.assertTrue(requiresUpdate3);
+    }
+
+    @Test
     public void testUpdateToSampleType() throws Exception {
         SampleMetadata sample1ExistingData = initSampleMetadata("SAMPLE_A_1", "C-BRC0DE-F001-d01",
                 "C-BRC0DE", "ABC-123", "", "Non-PDX", NucleicAcid.DNA, "Tissue", null);
