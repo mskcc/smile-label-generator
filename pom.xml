@@ -21,13 +21,6 @@
     </repository>
   </repositories>
 
-  <pluginRepositories>
-    <pluginRepository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </pluginRepository>
-  </pluginRepositories>
-
   <properties>
     <java.version>21</java.version>
     <maven.compiler.version>3.11.0</maven.compiler.version>
@@ -36,13 +29,13 @@
     <jackson.version>2.17.2</jackson.version>
     <!-- smile messaging and shared entities dependency versions -->
     <smile_messaging_java.group>com.github.mskcc</smile_messaging_java.group>
-    <smile_messaging_java.version>2.1.1b.RELEASE</smile_messaging_java.version>
+    <smile_messaging_java.version>2.1.2.RELEASE</smile_messaging_java.version>
     <!-- smile commons centralized config properties -->
     <smile_commons.group>com.github.mskcc</smile_commons.group>
-    <smile_commons.version>2.1.1.RELEASE</smile_commons.version>
+    <smile_commons.version>a661a7b9a81ae51cb761ae32a6444dd01fb1994d</smile_commons.version> <!-- this is 2.1.3.RELEASE -->
     <!-- smile server model module -->
     <smile_server.group>com.github.mskcc.smile-server</smile_server.group>
-    <smile_server.version>2.1.34.RELEASE</smile_server.version>
+    <smile_server.version>2.1.37.RELEASE</smile_server.version>
   </properties>
 
   <dependencies>
@@ -144,15 +137,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.6.0</version>
-        <dependencies>
-          <dependency>
-            <groupId>${smile_commons.group}</groupId>
-            <artifactId>smile-commons</artifactId>
-            <version>${smile_commons.version}</version>
-          </dependency>
-        </dependencies>
         <configuration>
-          <configLocation>checkstyle.xml</configLocation>
+          <configLocation>src/main/resources/checkstyle.xml</configLocation>
           <encoding>UTF-8</encoding>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
