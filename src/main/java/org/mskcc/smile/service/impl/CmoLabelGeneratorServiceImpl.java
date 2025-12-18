@@ -578,7 +578,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             }
         } catch (Exception e) {
             LOG.warn("Could not resolve sample type abbreviation directly from 'sampleOrigin': "
-                    + sampleLabelParts.getSampleOrigin() + " and 'sampelType (igo cmoSampleClass)': "
+                    + sampleLabelParts.getSampleOrigin() + " and 'sampleType (igo cmoSampleClass)': "
                     + sampleLabelParts.getSampleType() + " combination. Attempting from just sample class.");
         }
 

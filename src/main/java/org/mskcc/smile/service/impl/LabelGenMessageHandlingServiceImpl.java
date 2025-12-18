@@ -214,6 +214,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             Map<String, Object> statusMap = mapper.convertValue(
                                     sampleMap.get("status"), Map.class);
 
+                            // if validation status from validator is false then skip label generation
                             Boolean validationStatus = (Boolean) statusMap.get("validationStatus");
                             if (!validationStatus) {
                                 continue;
@@ -256,6 +257,8 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             }
                             sampleMap.put("status", statusMap);
 
+                            // even if validation status is false, the label generator may be able
+                            // to fall back on an existing label from smile store
                             String resolvedLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
                                     labelParts, existingSamples, samplesByAltId);
                             if (resolvedLabel == null) {
@@ -344,6 +347,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         Map<String, List<CmoLabelParts>> patientSamplesMap = getPatientSamplesMap(samples);
                         Map<String, List<CmoLabelParts>> altIdSamplesMap = getAltIdSamplesMap(samples);
 
+                        // orig json map is used for ddog logging
                         Map<String, String> origSampleJsonMap = new HashMap<>();
                         for (int i = 0; i < samples.size(); i++) {
                             Map<String, Object> sampleMap = samples.get(i);
@@ -351,108 +355,73 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                             origSampleJsonMap.put(labelParts.getPrimaryId(),
                                     labelParts.getOrigSampleJsonStr());
 
+                            // if validation status from validator is false then skip label generation
+                            Map<String, Object> statusMap = mapper.convertValue(
+                                    sampleMap.get("status"), Map.class);
+                            if (statusMap != null && !(Boolean) statusMap.get("validationStatus")) {
+                                continue;
+                            }
+
+                            // get existing patient samples for cmo patient id and by sample alt id
+                            // these lists add context when resolving sample and/or nucleic acid counters
                             List<CmoLabelParts> existingSamples =
                                             patientSamplesMap.getOrDefault(labelParts.getCmoPatientId(),
                                                     new ArrayList<>());
                             List<CmoLabelParts> samplesByAltId
                                     = altIdSamplesMap.getOrDefault(labelParts.getAltId(), new ArrayList<>());
 
-                            // Case when sample update json doesn't have status
-                            Map<String, Object> statusMap
-                                    = mapper.convertValue(sampleMap.get("status"), Map.class);
-                            if (sampleMap.get("status") == null) {
-                                statusMap = cmoLabelGeneratorService
-                                        .generateSampleStatus(labelParts, existingSamples, samplesByAltId);
-                                sampleMap.put("status", statusMap);
-                            }
-                            Boolean validationStatus = (Boolean) statusMap.get("validationStatus");
-                            if (validationStatus) {
-                                // generate new cmo sample label and update sample metadata object
-
-                                String newLabel =
-                                        cmoLabelGeneratorService.generateCmoSampleLabel(labelParts,
-                                                existingSamples, samplesByAltId);
-                                if (newLabel == null) {
-                                    Map<String, Object> newSampleStatus
-                                            = cmoLabelGeneratorService.generateSampleStatus(labelParts,
-                                                    existingSamples, samplesByAltId);
-                                    sampleMap.put("status", newSampleStatus);
-                                }
-
-                                // check if matching sample found and determine if label actually needs
-                                // updating or if we can use the same label that is already persisted for
-                                // this sample note that we want to continue publishing to the
-                                // IGO_SAMPLE_UPDATE_TOPIC since there might be other metadata changes
-                                // that need to be persisted that may not necessarily affect
-                                // the cmo label generated
-                                String resolvedLabel
-                                        = resolveAndUpdateCmoSampleLabel(labelParts.getPrimaryId(),
-                                                existingSamples, newLabel);
-
-                                // if existing cmo label isn't blank then determine if the update is
-                                // a meaningful update with respect to the sample metadata
-                                if (!StringUtils.isBlank(labelParts.getCmoSampleName())) {
-                                    // if incoming updated sample has an existing cmo label then check
-                                    // if there are any meaningful changes to the metadata that
-                                    // affects the sample type abbreviation or nucleic acid abbreviation
-                                    Boolean hasMeaningfulUpdate =
-                                            cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
-                                                    resolvedLabel, labelParts.getCmoSampleName());
-                                    if (hasMeaningfulUpdate) {
-                                        LOG.warn(makeLogMsgExistingCmoLabelNotUsing(labelParts.getPrimaryId(),
-                                                labelParts.getCmoSampleName(),
-                                                newLabel));
-                                    } else {
-                                        // before settling on using the provided cmo label from the
-                                        // incoming sample check if that label already exists in smile
-                                        // for another sample
-                                        if (isCmoLabelAlreadyInUse(labelParts.getPrimaryId(),
-                                                resolvedLabel)) {
-                                            String nextAvailableLabel
-                                                    = findNextAvailableCmoLabel(
-                                                            labelParts.getPrimaryId(),
-                                                            resolvedLabel,
-                                                            labelParts.getAltId());
-                                            if (nextAvailableLabel == null) {
-                                                LOG.info(makeLogMsgResolvedLabelNotUsing(
-                                                        labelParts.getPrimaryId(),
-                                                        resolvedLabel,
-                                                        newLabel));
-                                                resolvedLabel = newLabel;
-                                            } else {
-                                                LOG.info(makeLogMsgResolvedLabelNotUsing(
-                                                        labelParts.getPrimaryId(),
-                                                        resolvedLabel,
-                                                        nextAvailableLabel));
-                                                resolvedLabel = nextAvailableLabel;
-                                            }
-                                        } else {
-                                            LOG.info("Using existing CMO label for incoming sample: "
-                                                + labelParts.getPrimaryId() + ", existing CMO label: "
-                                                + labelParts.getCmoSampleName());
-                                            resolvedLabel = labelParts.getCmoSampleName();
-                                        }
+                            // bypass label generation if sample does not have applicable data updates
+                            Boolean generateLabel = cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(
+                                            labelParts, existingSamples);
+                            if (!generateLabel) {
+                                LOG.info("No updates to label-specific data for sample: "
+                                        + labelParts.getPrimaryId()
+                                        + " - falling back on existing label in smile if exists");
+                                for (CmoLabelParts s : existingSamples) {
+                                    if (s.getPrimaryId().equals(labelParts.getPrimaryId())) {
+                                        sampleMap.put("cmoSampleName", s.getCmoSampleName());
+                                        samples.set(i, sampleMap);
+                                        break;
                                     }
                                 }
-                                // doesn't hurt to check to really make sure that this
-                                // label isn't already in use by another sample
-                                if (isCmoLabelAlreadyInUse(labelParts.getPrimaryId(), resolvedLabel)) {
-                                    LOG.info("Resolved label " + resolvedLabel
-                                            + " is already in use by another sample. "
-                                            + "Using the next available label instead.");
-                                    resolvedLabel = findNextAvailableCmoLabel(labelParts.getPrimaryId(),
-                                            resolvedLabel,
-                                            labelParts.getAltId());
-                                }
-                                // update the sample label for data being sent to smile server
-                                sampleMap.put("cmoSampleName", resolvedLabel);
-                                labelParts.setCmoSampleName(resolvedLabel);
-                                patientSamplesMap.put(labelParts.getCmoPatientId(),
-                                        updatePatientSampleList(existingSamples, labelParts));
-                                altIdSamplesMap.put(labelParts.getAltId(),
-                                        updateAltIdSampleList(samplesByAltId, labelParts));
+                                continue;
                             }
+
+                            // update sample status map - if validation status is now false then
+                            // that indicates that label could not be generated from current data
+                            statusMap = cmoLabelGeneratorService.generateSampleStatus(
+                                        labelParts, existingSamples, samplesByAltId);
+                            Boolean validationStatus = (Boolean) statusMap.get("validationStatus");
+                            if (!validationStatus) {
+                                LOG.error("Unable to generate new CMO sample label for sample: "
+                                        + labelParts.getPrimaryId());
+                            }
+                            sampleMap.put("status", statusMap);
+
+                            // even if validation status is false, the label generator may be able
+                            // to fall back on an existing label from smile store
+                            String resolvedLabel = cmoLabelGeneratorService.generateCmoSampleLabel(
+                                    labelParts, existingSamples, samplesByAltId);
+                            if (resolvedLabel == null) {
+                                LOG.error("Unable to generate new CMO sample label for sample or resolve "
+                                        + "label to use from existing data: "
+                                        + labelParts.getPrimaryId());
+                                samples.set(i, sampleMap);
+                                continue;
+                            }
+                            // if incoming sample has an existing cmo label then ensure that label update is
+                            // meaningful and that label generated is not in use by another sample in smile
+                            if (!StringUtils.isBlank(labelParts.getCmoSampleName())) {
+                                resolvedLabel = resolveLabelAgainstSmileStore(resolvedLabel, labelParts);
+                            }
+                            // update the sample label for data being sent to smile server and sample lists
+                            sampleMap.put("cmoSampleName", resolvedLabel);
                             samples.set(i, sampleMap);
+                            labelParts.setCmoSampleName(resolvedLabel);
+                            patientSamplesMap.put(labelParts.getCmoPatientId(),
+                                    updatePatientSampleList(existingSamples, labelParts));
+                            altIdSamplesMap.put(labelParts.getAltId(),
+                                    updateAltIdSampleList(samplesByAltId, labelParts));
                         }
 
                         // samples can still publish to the smile server individually but only after
@@ -481,58 +450,6 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
             }
             cmoSampleLabelUpdateShutdownLatch.countDown();
         }
-    }
-
-    private String resolveAndUpdateCmoSampleLabel(String samplePrimaryId,
-            List<CmoLabelParts> existingSamples, String newCmoSampleLabel) {
-        // check for matching sample in existing samples list and determine if label
-        // actually needs updating or if we can use the same label that is alredy
-        // persisted for this sample
-        CmoLabelParts matchingSample = null;
-        for (CmoLabelParts s : existingSamples) {
-            if (s.getPrimaryId().equalsIgnoreCase(samplePrimaryId)) {
-                matchingSample = s;
-                break;
-            }
-        }
-        // if sample does not require a label update then use the existing label from the
-        // matching sample identified if applicable - otherwise use the newly generated label
-        Boolean updateRequired = Boolean.FALSE;
-        if (matchingSample != null) {
-            // if matching sample cmo label is blank then return new label by default
-            if (StringUtils.isBlank(matchingSample.getCmoSampleName())) {
-                return newCmoSampleLabel;
-            }
-            try {
-                updateRequired = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(
-                        newCmoSampleLabel, matchingSample.getCmoSampleName());
-            } catch (IllegalStateException e) {
-                // note: special cases where we just want to keep the existing label even if it's not
-                // meeting the cmo id regex requirements only if the existing cmo sample name
-                // matches the existing investigator sample id
-                if (matchingSample.getCmoSampleName().equals(matchingSample.getInvestigatorSampleId())) {
-                    return matchingSample.getCmoSampleName();
-                } else {
-                    LOG.error("IllegalStateException thrown. Falling back on existing CMO label for sample: "
-                            + samplePrimaryId, e);
-                    return matchingSample.getCmoSampleName();
-                }
-            } catch (NullPointerException e2) {
-                LOG.error("NPE caught during label generation check. Falling back on existing CMO label "
-                        + "name for sample: " + samplePrimaryId, e2);
-                return matchingSample.getCmoSampleName();
-            }
-            if (!updateRequired) {
-                LOG.info("No change detected for CMO sample label metadata. Falling back on "
-                        + "existing CMO label for matching IGO sample from database "
-                        + "for sample: " + samplePrimaryId);
-                return matchingSample.getCmoSampleName();
-            }
-        }
-        LOG.info("Changes detected in CMO sample label metadata - "
-                    + "updating sample CMO label to newly generated label: "
-                + samplePrimaryId + ", new label: " + newCmoSampleLabel);
-        return newCmoSampleLabel;
     }
 
     private List<CmoLabelParts> updateAltIdSampleList(List<CmoLabelParts> altIdSamples,
@@ -943,6 +860,14 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         + labelParts.getCmoSampleName());
                 resolvedLabel = labelParts.getCmoSampleName();
             }
+        }
+        // triple check that resolved label isn't already in use by another sample
+        if (isCmoLabelAlreadyInUse(labelParts.getPrimaryId(), labelParts.getCmoSampleName())) {
+            LOG.info("Resolved label " + resolvedLabel
+                    + " is already in use by another sample. "
+                    + "Using the next available label instead.");
+            resolvedLabel = findNextAvailableCmoLabel(labelParts.getPrimaryId(),
+                    resolvedLabel, labelParts.getAltId());
         }
         return resolvedLabel;
     }
