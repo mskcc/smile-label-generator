@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.logging.log4j.util.Strings;
+import org.mskcc.smile.commons.JsonComparator;
 import org.mskcc.smile.commons.enums.CmoSampleClass;
 import org.mskcc.smile.commons.enums.NucleicAcid;
 import org.mskcc.smile.commons.enums.SampleOrigin;
@@ -26,6 +27,7 @@ import org.mskcc.smile.commons.enums.SampleType;
 import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.mskcc.smile.service.util.CmoLabelParts;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,6 +36,9 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
+    @Autowired
+    private JsonComparator jsonComparator;
+
     private final ObjectMapper mapper = new ObjectMapper();
     private static final Log LOG = LogFactory.getLog(CmoLabelGeneratorServiceImpl.class);
     // example: C-1235-X001-d01
@@ -109,6 +114,29 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         return map;
     }
 
+    @Override
+    public Boolean sampleHasLabelSpecificUpdates(CmoLabelParts sample,
+            List<CmoLabelParts> existingPatientSamples) throws Exception {
+        if (existingPatientSamples.isEmpty()) {
+            return Boolean.TRUE;
+        }
+        // find matching sample in set of existing patient samples
+        for (CmoLabelParts existingSample : existingPatientSamples) {
+            if (existingSample.getPrimaryId().equals(sample.getPrimaryId())) {
+                try {
+                    return !jsonComparator.isConsistent(mapper.writeValueAsString(sample),
+                            mapper.writeValueAsString(existingSample));
+                } catch (JsonProcessingException ex) {
+                    LOG.error("Encountered JSON processing error while comparing sample "
+                            + "label parts to existing sample label parts.", ex);
+                } catch (Exception ex) {
+                    LOG.error("Found existing sample but label metadata comparison failed", ex);
+                }
+            }
+        }
+        return Boolean.TRUE;
+    }
+
     /**
      * Compares the regex groups for 2 CMO labels generated for the same IGO sample.
      * The padded counter strings encoded in the cmo labels being compared are ignored.
@@ -141,6 +169,7 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return Boolean.TRUE;
         }
 
+        // handles case where existing label is blank or non-CMO label format
         if (!matcherExistingLabel.find() || !matcherNewLabel.find()) {
             if (matcherNewLabel.find() && !matcherExistingLabel.find()) {
                 return Boolean.TRUE;
@@ -329,42 +358,106 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
     }
 
     @Override
-    public String generateCmoSampleLabel(CmoLabelParts sampleMetadata,
+    public String generateCmoSampleLabel(CmoLabelParts sample,
             List<CmoLabelParts> existingSamples, List<CmoLabelParts> samplesByAltId) {
         // if sample is a cellline sample then generate a cmo cellline label
-        if (isCmoCelllineSample(sampleMetadata)) {
-            return generateCmoCelllineSampleLabel(sampleMetadata.getIgoRequestId(),
-                    sampleMetadata.getInvestigatorSampleId());
+        if (isCmoCelllineSample(sample)) {
+            String newLabel = generateCmoCelllineSampleLabel(sample.getIgoRequestId(),
+                    sample.getInvestigatorSampleId());
+            return resolveCmoLabelToUse(sample, existingSamples, newLabel);
         }
 
         // resolve sample type abbreviation
-        String sampleTypeAbbrev = resolveSampleTypeAbbreviation(sampleMetadata);
+        String sampleTypeAbbrev = resolveSampleTypeAbbreviation(sample);
         String resolvedSampleTypeAbbrev = resolveSampleTypeAbbrevWithContext(
-                sampleMetadata.getPrimaryId(), sampleTypeAbbrev, samplesByAltId);
+                sample.getPrimaryId(), sampleTypeAbbrev, samplesByAltId);
 
         // resolve the sample counter value to use for the cmo label
-        Integer sampleCounter =  resolveSampleIncrementValue(sampleMetadata.getPrimaryId(),
+        Integer sampleCounter =  resolveSampleIncrementValue(sample.getPrimaryId(),
                 existingSamples, samplesByAltId, resolvedSampleTypeAbbrev);
         String paddedSampleCounter = getPaddedIncrementString(sampleCounter,
                 CMO_SAMPLE_COUNTER_STRING_PADDING);
 
         // resolve nucleic acid abbreviation
         String nucleicAcidAbbreviation =
-                resolveNucleicAcidAbbreviation(sampleMetadata);
+                resolveNucleicAcidAbbreviation(sample);
         if (nucleicAcidAbbreviation == null) {
             LOG.error("Could not resolve nucleic acid abbreviation from sample "
-                    + "type or naToExtract: " + sampleMetadata.toString());
-            return null;
+                    + "type or naToExtract: " + sample.toString());
+            return resolveCmoLabelToUse(sample, existingSamples, null);
         }
         // get next increment for nucleic acid abbreviation
-        Integer nextNucAcidCounter = resolveNextNucleicAcidIncrement(sampleMetadata.getPrimaryId(),
+        Integer nextNucAcidCounter = resolveNextNucleicAcidIncrement(sample.getPrimaryId(),
                 resolvedSampleTypeAbbrev, nucleicAcidAbbreviation, samplesByAltId);
         String paddedNucAcidCounter = getPaddedIncrementString(nextNucAcidCounter,
                 CMO_SAMPLE_NUCACID_COUNTER_PADDING);
 
-        String patientId = sampleMetadata.getCmoPatientId();
-        return getFormattedCmoSampleLabel(patientId, resolvedSampleTypeAbbrev, paddedSampleCounter,
+        String patientId = sample.getCmoPatientId();
+        String newLabel = getFormattedCmoSampleLabel(patientId, resolvedSampleTypeAbbrev, paddedSampleCounter,
                 nucleicAcidAbbreviation, paddedNucAcidCounter);
+        if (StringUtils.isBlank(newLabel) && !StringUtils.isBlank(sample.getCmoSampleName())) {
+            return sample.getCmoSampleName();
+        }
+        return resolveCmoLabelToUse(sample, existingSamples, newLabel);
+    }
+
+    private String resolveCmoLabelToUse(CmoLabelParts sample,
+        List<CmoLabelParts> existingSamples, String newCmoSampleLabel) {
+        if (existingSamples.isEmpty() && StringUtils.isBlank(newCmoSampleLabel)) {
+            LOG.info("Defaulting to label provided in incoming sample data: " + sample.toString());
+            return sample.getCmoSampleName();
+        }
+
+        // check for matching sample in existing samples list and determine if label
+        // actually needs updating or if we can use the same label that is alredy
+        // persisted for this sample
+        CmoLabelParts matchingSample = null;
+        for (CmoLabelParts s : existingSamples) {
+            if (s.getPrimaryId().equalsIgnoreCase(sample.getPrimaryId())) {
+                matchingSample = s;
+                break;
+            }
+        }
+
+        // if no matching sample or label of matching sample is blank then return
+        // either the new label or label from incoming sample data
+        if (matchingSample == null || StringUtils.isBlank(matchingSample.getCmoSampleName())) {
+            return !StringUtils.isBlank(newCmoSampleLabel) ? newCmoSampleLabel : sample.getCmoSampleName();
+        }
+
+        // if sample does not require a label update then use the existing label from the
+        // matching sample identified if applicable - otherwise use the newly generated label
+        Boolean updateRequired;
+        try {
+            updateRequired = igoSampleRequiresLabelUpdate(
+                    newCmoSampleLabel, matchingSample.getCmoSampleName());
+        } catch (IllegalStateException e) {
+            // note: special cases where we just want to keep the existing label even if it's not
+            // meeting the cmo id regex requirements only if the existing cmo sample name
+            // matches the existing investigator sample id
+            if (matchingSample.getCmoSampleName().equals(matchingSample.getInvestigatorSampleId())) {
+                return matchingSample.getCmoSampleName();
+            } else {
+                LOG.error("IllegalStateException thrown. Falling back on existing CMO label for sample: "
+                        + sample.getPrimaryId(), e);
+                return matchingSample.getCmoSampleName();
+            }
+        } catch (NullPointerException e2) {
+            LOG.error("NPE caught during label generation check. Falling back on existing CMO label "
+                    + "name for sample: " + sample.getPrimaryId(), e2);
+            return matchingSample.getCmoSampleName();
+        }
+        if (!updateRequired) {
+            LOG.info("No change detected for CMO sample label metadata. Falling back on "
+                    + "existing CMO label for matching IGO sample from database "
+                    + "for sample: " + sample.getPrimaryId());
+            return matchingSample.getCmoSampleName();
+        }
+
+        LOG.info("Changes detected in CMO sample label metadata - "
+                    + "updating sample CMO label to newly generated label: "
+                + sample.getPrimaryId() + ", new label: " + newCmoSampleLabel);
+        return newCmoSampleLabel;
     }
 
     @Override

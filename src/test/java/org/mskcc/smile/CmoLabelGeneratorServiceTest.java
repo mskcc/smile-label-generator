@@ -549,6 +549,8 @@ public class CmoLabelGeneratorServiceTest {
         // --> this should generate the label: C-BRC0DE-T001-d01
         CmoLabelParts sample1UpdatedData = initSampleMetadata("SAMPLE_A_1", "", "C-BRC0DE", "ABC-123",
                 "Unknown Tumor", "Non-PDX", NucleicAcid.DNA, "Tissue", null, "SAMPLE_A");
+        Assertions.assertTrue(cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sample1UpdatedData,
+                existingPatientSamples));
         String sample1UpdatedLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample1UpdatedData,
                 existingPatientSamples, samplesByAltId123);
         Assertions.assertEquals("C-BRC0DE-T001-d01", sample1UpdatedLabel);
@@ -560,6 +562,8 @@ public class CmoLabelGeneratorServiceTest {
         List<CmoLabelParts> samplesByAltId456 = Arrays.asList(sample2ExistingData);
         CmoLabelParts sample2UpdatedData = initSampleMetadata("SAMPLE_A_4", "", "C-BRC0DE", "ABC-456",
                 "Normal", "Non-PDX", NucleicAcid.DNA, "Whole Blood", null, "SAMPLE_A");
+        Assertions.assertTrue(cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sample2UpdatedData,
+                updatedPatientSamples));
         String sample2UpdatedLabel = cmoLabelGeneratorService.generateCmoSampleLabel(sample2UpdatedData,
                 updatedPatientSamples, samplesByAltId456);
         Assertions.assertEquals("C-BRC0DE-N001-d01", sample2UpdatedLabel);
@@ -572,6 +576,8 @@ public class CmoLabelGeneratorServiceTest {
                 = Arrays.asList(sample1UpdatedData, sample2UpdatedData);
         CmoLabelParts newTumorSample = initSampleMetadata("SAMPLE_B_1", "", "C-BRC0DE", "ABC-789",
                 "Unknown Tumor", "Non-PDX", NucleicAcid.DNA, "Tissue", null,  "SAMPLE_B");
+        Assertions.assertTrue(cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(newTumorSample,
+                newUpdatedPatientSamples));
         String newTumorLabel = cmoLabelGeneratorService.generateCmoSampleLabel(newTumorSample,
                 newUpdatedPatientSamples, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-BRC0DE-T002-d01", newTumorLabel);
@@ -625,6 +631,36 @@ public class CmoLabelGeneratorServiceTest {
         String label6 = cmoLabelGeneratorService.generateCmoSampleLabel(sm6,
                 DEFAULT_SAMPLES_BY_ALT_ID, DEFAULT_SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-BRCD03-L001-d01", label6);
+    }
+
+    /**
+     * Tests if sample has label specific updates that would warrant running the label generator.
+     * @throws Exception
+     */
+    @Test
+    public void testNoApplicableMetadataUpdates() throws Exception {
+        CmoLabelParts sm1 = initSampleMetadata("12345_C_7", "C-BRCD03-L001-d", "C-BRCD03", "ABF-89D",
+                "Unknown Tumor", "cfDNA", NucleicAcid.DNA, "Plasma", "cfDNA", "12345_C");
+        CmoLabelParts sm1Updated = initSampleMetadata("12345_C_7", "C-BRCD03-L001-d01", "C-BRCD03", "ABF-89D",
+                "Unknown Tumor", "cfDNA", NucleicAcid.DNA, "Plasma", "cfDNA", "12345_C");
+        // labels should be ignored during comparison
+        Assertions.assertFalse(
+                cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sm1Updated, Arrays.asList(sm1)));
+    }
+
+    /**
+     * Tests if sample has label specific updates that would warrant running the label generator.
+     * @throws Exception
+     */
+    @Test
+    public void testHasApplicableMetadataUpdates() throws Exception {
+        CmoLabelParts sm1 = initSampleMetadata("12345_C_7", "C-BRCD03-L001-d", "C-BRCD03", "ABF-89D",
+                "Normal", "cfDNA", NucleicAcid.DNA, "Plasma", "cfDNA", "12345_C");
+        CmoLabelParts sm1Updated = initSampleMetadata("12345_C_7", "C-BRCD03-L001-d01", "C-BRCD03", "ABF-89D",
+                "Unknown Tumor", "cfDNA", NucleicAcid.DNA, "Plasma", "cfDNA", "12345_C");
+        // labels should be ignored during comparison
+        Assertions.assertTrue(
+                cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sm1Updated, Arrays.asList(sm1)));
     }
 
     private CmoLabelParts getSampleWithPrimaryIdAndLabel(String primaryId, String cmoSampleName)

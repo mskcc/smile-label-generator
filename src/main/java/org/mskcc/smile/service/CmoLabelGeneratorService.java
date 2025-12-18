@@ -10,6 +10,8 @@ import org.mskcc.smile.service.util.CmoLabelParts;
  * @author ochoaa
  */
 public interface CmoLabelGeneratorService {
+    Boolean sampleHasLabelSpecificUpdates(CmoLabelParts sample,
+            List<CmoLabelParts> existingPatientSamples) throws Exception;
     String generateCmoSampleLabel(CmoLabelParts sample, List<CmoLabelParts> existingPatientSamples,
             List<CmoLabelParts> samplesByAltId);
     Map<String, Object> generateSampleStatus(CmoLabelParts sample, List<CmoLabelParts> existingSamples,

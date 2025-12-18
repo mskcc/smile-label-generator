@@ -1,5 +1,6 @@
 package org.mskcc.smile.service.util;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Serializable;
@@ -12,6 +13,7 @@ import org.apache.commons.lang3.ObjectUtils;
  * @author ochoaa
  */
 public class CmoLabelParts implements Serializable, Cloneable {
+    @JsonIgnore
     private final ObjectMapper mapper = new ObjectMapper();
     private String primaryId; // igo => igoId, smile => primaryId
     private String altId; // igo => altId, smile => additionalProperties:altId
@@ -26,6 +28,7 @@ public class CmoLabelParts implements Serializable, Cloneable {
     private String baitSet; // smile/igo => baitSet
     private String investigatorSampleId; // smile/igo => investigatorSampleId
     private String igoRequestId; // igo => requestId, smile => igoRequestId
+    @JsonIgnore
     private String origSampleJsonStr;
     private String cmoSampleName; // igo/smile => cmoSampleName
 
