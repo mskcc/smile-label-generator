@@ -31,6 +31,7 @@ public class CmoLabelParts implements Serializable, Cloneable {
     @JsonIgnore
     private String origSampleJsonStr;
     private String cmoSampleName; // igo/smile => cmoSampleName
+    private String tumorOrNormal; // igo/smile => tumorOrNormal
 
     public CmoLabelParts() {}
 
@@ -49,6 +50,7 @@ public class CmoLabelParts implements Serializable, Cloneable {
         this.investigatorSampleId = getString(sampleMap, "investigatorSampleId");
         this.baitSet = getString(sampleMap, "baitSet");
         this.cmoSampleName = getString(sampleMap, "cmoSampleName");
+        this.tumorOrNormal = getString(sampleMap, "tumorOrNormal");
 
         Map<String, Object> cmoSampleIdFields
                 = mapper.convertValue(sampleMap.get("cmoSampleIdFields"), Map.class);
@@ -282,6 +284,20 @@ public class CmoLabelParts implements Serializable, Cloneable {
      */
     public void setCmoSampleName(String cmoSampleName) {
         this.cmoSampleName = cmoSampleName;
+    }
+
+    /**
+     * @return the tumorOrNormal
+     */
+    public String getTumorOrNormal() {
+        return tumorOrNormal;
+    }
+
+    /**
+     * @param tumorOrNormal the tumorOrNormal to set
+     */
+    public void setTumorOrNormal(String tumorOrNormal) {
+        this.tumorOrNormal = tumorOrNormal;
     }
 
     private String getString(Map<String, Object> map, String key) {

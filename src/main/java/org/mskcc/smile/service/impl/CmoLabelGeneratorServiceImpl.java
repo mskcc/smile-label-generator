@@ -25,6 +25,7 @@ import org.mskcc.smile.commons.enums.NucleicAcid;
 import org.mskcc.smile.commons.enums.SampleOrigin;
 import org.mskcc.smile.commons.enums.SampleType;
 import org.mskcc.smile.commons.enums.SpecimenType;
+import org.mskcc.smile.commons.enums.TumorNormalType;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.mskcc.smile.service.util.CmoLabelParts;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -598,16 +599,39 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 return CFDNA_ABBREV_DEFAULT;
             }
         } catch (Exception e) {
-            // happens if cmoSampleClassValue is not found in CmoSampleClass
-            // nothing to do here since since sampleTypeAbbreviation
-            // is initialized to default 'F'
+            LOG.warn("Could not resolve sample type abbreviation from sampleType (IGO cmoSampleClass)"
+                    + " - checking if sample is a dual extraction.");
         }
 
+        // check if sample is dual extraction if sample type abbreviation is still not resolved
+        try {
+            NucleicAcid na = NucleicAcid.fromString(sampleLabelParts.getNaToExtract());
+            if (na.equals(NucleicAcid.DNA_AND_RNA)) {
+                TumorNormalType tn = TumorNormalType.getByValue(sampleLabelParts.getTumorOrNormal());
+                switch (tn) {
+                    case TUMOR -> {
+                        return "T";
+                    }
+                    case NORMAL -> {
+                        return "N";
+                    }
+                    default -> LOG.warn("Sample identified as a dual extraction but could not resolve"
+                                + " value for tumorOrNormal: " + sampleLabelParts.getTumorOrNormal());
+                }
+            }
+        } catch (Exception e) {
+            // happens if naToExtract cannot be resolved - nothing to do since
+            // sampleTypeAbbreviation will default to 'F'
+        }
+
+        // log sample details for failed sample type abbreviation
         if (sampleTypeAbbreviation.equalsIgnoreCase("F")) {
             LOG.warn("Could not resolve sample type abbreviation from sample class (igo specimen type),"
-                     + " sample origin, or sample type (igo cmo sample class) - using default 'F': ("
+                     + " sample origin, or sample type (igo cmo sample class), and did not identify sample"
+                    + " as a dual extraction - using default 'F': ("
                     + sampleLabelParts.getSampleClass() + ", " + sampleLabelParts.getSampleOrigin()
-                    + ", " + sampleLabelParts.getSampleType() + ")");
+                    + ", " + sampleLabelParts.getSampleType() + sampleLabelParts.getNaToExtract() + ", "
+                    + sampleLabelParts.getTumorOrNormal() + ")");
         }
         return sampleTypeAbbreviation;
     }
