@@ -1,5 +1,6 @@
 package org.mskcc.smile;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,9 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.mskcc.smile.commons.enums.NucleicAcid;
 import org.mskcc.smile.commons.enums.SpecimenType;
 import org.mskcc.smile.config.TestConfiguration;
-import org.mskcc.smile.model.SampleMetadata;
-import org.mskcc.smile.model.igo.IgoSampleManifest;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
+import org.mskcc.smile.service.util.CmoLabelParts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Import;
 @Import(TestConfiguration.class)
 public class PortedLimsRestCmoLabelGenerationTest {
     // setting as empty for now until alt id is fully supported
-    List<SampleMetadata> SAMPLES_BY_ALT_ID = new ArrayList<>();
+    List<CmoLabelParts> SAMPLES_BY_ALT_ID = new ArrayList<>();
 
     @Autowired
     private CmoLabelGeneratorService cmoLabelGeneratorService;
@@ -53,10 +53,9 @@ public class PortedLimsRestCmoLabelGenerationTest {
 
         // change to enum SpecimenType.Xenograft("Xenograft")
         // change to enum NucleicAcid.DNA("DNA")
-        IgoSampleManifest sample = getSampleMetadata("4324", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
-
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+        CmoLabelParts sample = getSampleMetadata("4324", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(sample,
                 new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId);
     }
@@ -74,16 +73,16 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample = getSampleMetadata("4324", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
+        CmoLabelParts sample = getSampleMetadata("4324", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
 
         String existingSampleId = "C-1235-X001-d";
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("5656",
-                cmoPatientId, "Xenograft", existingSampleId);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("5656",
+                cmoPatientId, "Xenograft", existingSampleId, "5656");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(sample,
                 existingSamples, SAMPLES_BY_ALT_ID);
 
         // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
@@ -107,16 +106,16 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample = getSampleMetadata("4324", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
+        CmoLabelParts sample = getSampleMetadata("4324", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
 
         String existingSampleId = "C-1235-X001-d01";
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("5656",
-                cmoPatientId, "Xenograft", existingSampleId);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("5656",
+                cmoPatientId, "Xenograft", existingSampleId, "5656");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(sample,
                 existingSamples, SAMPLES_BY_ALT_ID);
 
         // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
@@ -137,16 +136,16 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample = getSampleMetadata("4324", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
+        CmoLabelParts sample = getSampleMetadata("4324", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
 
         String existingSampleId = "C-1235-X012-d01";
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("5656",
-                cmoPatientId, "Xenograft", existingSampleId);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("5656",
+                cmoPatientId, "Xenograft", existingSampleId, "5656");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(sample,
                 existingSamples, SAMPLES_BY_ALT_ID);
 
         // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
@@ -168,19 +167,19 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample = getSampleMetadata("4324", cmoPatientId,
-                SpecimenType.PDX, NucleicAcid.RNA);
+        CmoLabelParts sample = getSampleMetadata("4324", cmoPatientId,
+                SpecimenType.PDX, NucleicAcid.RNA, requestId);
 
         String existingSampleId = "C-1235-X001-d01";
         String diffRequestId = "1234_A";
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("5656",
-                cmoPatientId, "Xenograft", existingSampleId);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("5656",
+                cmoPatientId, "Xenograft", existingSampleId, diffRequestId);
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
         // since nucleic acid abbreviation is different from existing sample, the
         // nucleic acid counter is also '01'
-        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample,
+        String cmoId = cmoLabelGeneratorService.generateCmoSampleLabel(sample,
                 existingSamples, SAMPLES_BY_ALT_ID);
 
         // this test result remains as is since the nuc acid is different from existing ones and would
@@ -202,21 +201,21 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
-        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
+        CmoLabelParts sample1 = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
+        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(sample1,
+                new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
-                cmoPatientId, "Xenograft", cmoId1);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Xenograft", cmoId1, "4324");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
-        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2,
+        CmoLabelParts sample2 = getSampleMetadata("4324_2", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, "4324");
+        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(sample2,
                 existingSamples, SAMPLES_BY_ALT_ID);
 
         // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
@@ -239,21 +238,21 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
-        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
+        CmoLabelParts sample1 = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
+        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(sample1,
+                new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
-                cmoPatientId, "Xenograft", cmoId1);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Xenograft", cmoId1, "4324");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.RNA);
-        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId, sample2,
+        CmoLabelParts sample2 = getSampleMetadata("4324_2", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.RNA, null);
+        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(sample2,
                 existingSamples, SAMPLES_BY_ALT_ID);
 
         // this test result remains as is since the nuc acid is different from existing ones and would
@@ -276,22 +275,22 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
-                SpecimenType.XENOGRAFT, NucleicAcid.DNA);
-        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
+        CmoLabelParts sample1 = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.XENOGRAFT, NucleicAcid.DNA, requestId);
+        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(sample1,
+                new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-X001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
-                cmoPatientId, "Xenograft", cmoId1);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Xenograft", cmoId1, "4324");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
-                SpecimenType.PDX, NucleicAcid.DNA);
-        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample2, existingSamples, SAMPLES_BY_ALT_ID);
+        CmoLabelParts sample2 = getSampleMetadata("4324_2", cmoPatientId,
+                SpecimenType.PDX, NucleicAcid.DNA, "4324");
+        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(sample2,
+                existingSamples, SAMPLES_BY_ALT_ID);
 
         // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
         // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
@@ -313,22 +312,22 @@ public class PortedLimsRestCmoLabelGenerationTest {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
 
-        IgoSampleManifest sample1 = getSampleMetadata("4324_1", cmoPatientId,
-                SpecimenType.ORGANOID, NucleicAcid.DNA);
-        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample1, new ArrayList<>(), SAMPLES_BY_ALT_ID);
+        CmoLabelParts sample1 = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.ORGANOID, NucleicAcid.DNA, requestId);
+        String cmoId1 = cmoLabelGeneratorService.generateCmoSampleLabel(sample1,
+                new ArrayList<>(), SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-G001-d01", cmoId1);
 
         // now we have one existing sample in this request for the same patient
-        SampleMetadata existingSample = getSampleMetadataWithCmoLabel("4324_1",
-                cmoPatientId, "Organoid", cmoId1);
+        CmoLabelParts existingSample = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Organoid", cmoId1, "4324");
         // get existing samples for given igo id and request id
-        List<SampleMetadata> existingSamples = Arrays.asList(existingSample);
+        List<CmoLabelParts> existingSamples = Arrays.asList(existingSample);
 
-        IgoSampleManifest sample2 = getSampleMetadata("4324_2", cmoPatientId,
-                SpecimenType.ORGANOID, NucleicAcid.DNA);
-        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                sample2, existingSamples, SAMPLES_BY_ALT_ID);
+        CmoLabelParts sample2 = getSampleMetadata("4324_2", cmoPatientId,
+                SpecimenType.ORGANOID, NucleicAcid.DNA, "4324");
+        String cmoId2 = cmoLabelGeneratorService.generateCmoSampleLabel(sample2,
+                existingSamples, SAMPLES_BY_ALT_ID);
 
         // keeping this "NotEquals" comparison for provenance - nucleic acid counter is now resolved
         // on a unique sample basis (i.e., alt id) and not by total patient samples of a given nuc acid type
@@ -349,25 +348,25 @@ public class PortedLimsRestCmoLabelGenerationTest {
     public void testIgoSampleWithNoLabelChangingMetadataUpdates() throws Exception {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
-        List<SampleMetadata> existingSamples = new ArrayList<>();
+        List<CmoLabelParts> existingSamples = new ArrayList<>();
 
         // sample 1 for patient w/igo id 4324_1
         String cmoId1 = "C-1235-G001-d01";
-        SampleMetadata existingSample1 = getSampleMetadataWithCmoLabel("4324_1",
-                cmoPatientId, "Organoid", cmoId1);
+        CmoLabelParts existingSample1 = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Organoid", cmoId1, requestId);
         existingSamples.add(existingSample1);
 
         // sample 2 for patient w/igo id 4324_2
         String cmoId2 = "C-1235-G002-d02";
-        SampleMetadata existingSample2 = getSampleMetadataWithCmoLabel("4324_2",
-                cmoPatientId, "Organoid", cmoId2);
+        CmoLabelParts existingSample2 = getSampleMetadataWithCmoLabel("4324_2",
+                cmoPatientId, "Organoid", cmoId2, requestId);
         existingSamples.add(existingSample2);
 
         // sample 1 with an update that does not affect the generated cmo label
-        IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
-                SpecimenType.ORGANOID, NucleicAcid.DNA);
-        String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
+        CmoLabelParts updatedSample = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.ORGANOID, NucleicAcid.DNA, requestId);
+        String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(updatedSample,
+                existingSamples, SAMPLES_BY_ALT_ID);
 
         // NOTE: now that the nucleic acid counter doesn't increment for unless it's
         // another sample of the same alt id, the 'updatedCmoLabel' returned should
@@ -390,25 +389,25 @@ public class PortedLimsRestCmoLabelGenerationTest {
     public void testIgoSampleWithLabelChangingMetadataUpdates() throws Exception {
         String requestId = "5432_P";
         String cmoPatientId = "C-1235";
-        List<SampleMetadata> existingSamples = new ArrayList<>();
+        List<CmoLabelParts> existingSamples = new ArrayList<>();
 
         // sample 1 for patient w/igo id 4324_1
         String cmoId1 = "C-1235-G001-d01";
-        SampleMetadata existingSample1 = getSampleMetadataWithCmoLabel("4324_1",
-                cmoPatientId, "Organoid", cmoId1);
+        CmoLabelParts existingSample1 = getSampleMetadataWithCmoLabel("4324_1",
+                cmoPatientId, "Organoid", cmoId1, requestId);
         existingSamples.add(existingSample1);
 
         // sample 2 for patient w/igo id 4324_2
         String cmoId2 = "C-1235-G002-d02";
-        SampleMetadata existingSample2 = getSampleMetadataWithCmoLabel("4324_2",
-                cmoPatientId, "Organoid", cmoId2);
+        CmoLabelParts existingSample2 = getSampleMetadataWithCmoLabel("4324_2",
+                cmoPatientId, "Organoid", cmoId2, requestId);
         existingSamples.add(existingSample2);
 
         // sample 1 with an update that does affect the generated cmo label
-        IgoSampleManifest updatedSample = getSampleMetadata("4324_1", cmoPatientId,
-                SpecimenType.ORGANOID, NucleicAcid.RNA);
-        String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(requestId,
-                updatedSample, existingSamples, SAMPLES_BY_ALT_ID);
+        CmoLabelParts updatedSample = getSampleMetadata("4324_1", cmoPatientId,
+                SpecimenType.ORGANOID, NucleicAcid.RNA, requestId);
+        String updatedCmoLabel = cmoLabelGeneratorService.generateCmoSampleLabel(updatedSample,
+                existingSamples, SAMPLES_BY_ALT_ID);
         Assertions.assertEquals("C-1235-G001-r01", updatedCmoLabel);
         Boolean needsUpdates = cmoLabelGeneratorService.igoSampleRequiresLabelUpdate(updatedCmoLabel, cmoId1);
         Assertions.assertTrue(needsUpdates);
@@ -424,26 +423,27 @@ public class PortedLimsRestCmoLabelGenerationTest {
         Assertions.assertTrue(needsUpdates1);
     }
 
-    private SampleMetadata getSampleMetadataWithCmoLabel(String igoId, String cmoPatientId,
-            String specimenType, String cmoSampleName) {
-        SampleMetadata sample = new SampleMetadata();
-        sample.setPrimaryId(igoId);
-        sample.setCmoPatientId(cmoPatientId);
-        sample.setSampleClass(specimenType);
-        sample.setCmoSampleName(cmoSampleName);
-        return sample;
+    private CmoLabelParts getSampleMetadataWithCmoLabel(String igoId, String cmoPatientId,
+            String specimenType, String cmoSampleName, String requestId) throws JsonProcessingException {
+        Map<String, Object> sample = new HashMap<>();
+        sample.put("primaryId", igoId);
+        sample.put("cmoPatientId", cmoPatientId);
+        sample.put("sampleClass", specimenType);
+        sample.put("cmoSampleName", cmoSampleName);
+        return new CmoLabelParts(sample, requestId);
     }
 
-    private IgoSampleManifest getSampleMetadata(String igoId, String cmoPatientId,
-            SpecimenType specimenType, NucleicAcid naToExtract) {
-        IgoSampleManifest sample = new IgoSampleManifest();
-        sample.setIgoId(igoId);
-        sample.setCmoPatientId(cmoPatientId);
-        sample.setSpecimenType(specimenType.getValue());
+    private CmoLabelParts getSampleMetadata(String igoId, String cmoPatientId,
+            SpecimenType specimenType, NucleicAcid naToExtract, String requestId)
+            throws JsonProcessingException {
+        Map<String, Object> sample = new HashMap<>();
+        sample.put("igoId", igoId);
+        sample.put("cmoPatientId", cmoPatientId);
+        sample.put("specimenType", specimenType.getValue());
 
-        Map<String, String> cmoSampleIdFields = new HashMap<>();
+        Map<String, Object> cmoSampleIdFields = new HashMap<>();
         cmoSampleIdFields.put("naToExtract", naToExtract.getValue());
-        sample.setCmoSampleIdFields(cmoSampleIdFields);
-        return sample;
+        sample.put("cmoSampleIdFields", cmoSampleIdFields);
+        return new CmoLabelParts(sample, requestId);
     }
 }

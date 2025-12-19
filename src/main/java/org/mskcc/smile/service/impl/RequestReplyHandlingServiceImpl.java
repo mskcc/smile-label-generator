@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nats.client.Message;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -17,9 +17,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mskcc.cmo.messaging.Gateway;
 import org.mskcc.cmo.messaging.MessageConsumer;
-import org.mskcc.smile.model.SampleMetadata;
 import org.mskcc.smile.service.CmoLabelGeneratorService;
 import org.mskcc.smile.service.RequestReplyHandlingService;
+import org.mskcc.smile.service.util.CmoLabelParts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -93,14 +93,15 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
                     // reply info request message contains cmo patient id
                     ReplyInfo replyInfo = cmoLabelGeneratorReqReplyQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (replyInfo != null) {
-                        SampleMetadata sample = mapper.readValue(replyInfo.getRequestMessage(),
-                                SampleMetadata.class);
-                        List<SampleMetadata> existingPatientSamples
-                                = getExistingPatientSamples(sample.getCmoPatientId());
-                        List<SampleMetadata> samplesByAltId
-                                = getSamplesByAltId(sample.getAdditionalProperty("altId"));
+                        Map<String, Object> sample = mapper.readValue(replyInfo.getRequestMessage(),
+                                Map.class);
+                        CmoLabelParts sampleLabelParts = new CmoLabelParts(sample, null);
+                        List<CmoLabelParts> existingPatientSamples
+                                = getExistingPatientSamples(sampleLabelParts.getCmoPatientId());
+                        List<CmoLabelParts> samplesByAltId
+                                = getSamplesByAltId(sampleLabelParts.getAltId());
                         String updatedCmoSampleLabel =
-                                cmoLabelGeneratorService.generateCmoSampleLabel(sample,
+                                cmoLabelGeneratorService.generateCmoSampleLabel(sampleLabelParts,
                                         existingPatientSamples, samplesByAltId);
 
                         //log replied to the message
@@ -120,22 +121,32 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
         }
     }
 
-    private List<SampleMetadata> getExistingPatientSamples(String cmoPatientId) throws Exception {
+    private List<CmoLabelParts> getExistingPatientSamples(String cmoPatientId) throws Exception {
         Message reply = messagingGateway.request(PATIENT_SAMPLES_REQUEST_TOPIC,
                     cmoPatientId);
-        SampleMetadata[] ptSamples = mapper.readValue(
+        List<Object> sampleObjectList = mapper.readValue(
                 new String(reply.getData(), StandardCharsets.UTF_8),
-                SampleMetadata[].class);
-        return new ArrayList<>(Arrays.asList(ptSamples));
+                List.class);
+        List<CmoLabelParts> ptSamples = new ArrayList<>();
+        for (Object s : sampleObjectList) {
+            Map<String, Object> sm = mapper.convertValue(s, Map.class);
+            ptSamples.add(new CmoLabelParts(sm, null));
+        }
+        return ptSamples;
     }
 
-    private List<SampleMetadata> getSamplesByAltId(String altId) throws Exception {
+    private List<CmoLabelParts> getSamplesByAltId(String altId) throws Exception {
         Message reply = messagingGateway.request(SAMPLES_BY_ALT_ID_REQREPLY_TOPIC,
                     altId);
-        SampleMetadata[] samplesByAltId = mapper.readValue(
+        List<Object> sampleObjectList = mapper.readValue(
                 new String(reply.getData(), StandardCharsets.UTF_8),
-                SampleMetadata[].class);
-        return new ArrayList<>(Arrays.asList(samplesByAltId));
+                List.class);
+        List<CmoLabelParts> samplesByAltId = new ArrayList<>();
+        for (Object s : sampleObjectList) {
+            Map<String, Object> sm = mapper.convertValue(s, Map.class);
+            samplesByAltId.add(new CmoLabelParts(sm, null));
+        }
+        return samplesByAltId;
     }
 
     @Override
