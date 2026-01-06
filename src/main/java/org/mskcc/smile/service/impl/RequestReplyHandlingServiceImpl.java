@@ -95,7 +95,7 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
                     if (replyInfo != null) {
                         Map<String, Object> sample = mapper.readValue(replyInfo.getRequestMessage(),
                                 Map.class);
-                        CmoLabelParts sampleLabelParts = new CmoLabelParts(sample, null);
+                        CmoLabelParts sampleLabelParts = new CmoLabelParts(sample, null, null);
                         List<CmoLabelParts> existingPatientSamples
                                 = getExistingPatientSamples(sampleLabelParts.getCmoPatientId());
                         List<CmoLabelParts> samplesByAltId
@@ -130,7 +130,7 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
         List<CmoLabelParts> ptSamples = new ArrayList<>();
         for (Object s : sampleObjectList) {
             Map<String, Object> sm = mapper.convertValue(s, Map.class);
-            ptSamples.add(new CmoLabelParts(sm, null));
+            ptSamples.add(new CmoLabelParts(sm, null, null));
         }
         return ptSamples;
     }
@@ -144,7 +144,7 @@ public class RequestReplyHandlingServiceImpl implements RequestReplyHandlingServ
         List<CmoLabelParts> samplesByAltId = new ArrayList<>();
         for (Object s : sampleObjectList) {
             Map<String, Object> sm = mapper.convertValue(s, Map.class);
-            samplesByAltId.add(new CmoLabelParts(sm, null));
+            samplesByAltId.add(new CmoLabelParts(sm, null, null));
         }
         return samplesByAltId;
     }
