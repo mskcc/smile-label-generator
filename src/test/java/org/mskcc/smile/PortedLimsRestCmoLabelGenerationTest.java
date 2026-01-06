@@ -430,7 +430,7 @@ public class PortedLimsRestCmoLabelGenerationTest {
         sample.put("cmoPatientId", cmoPatientId);
         sample.put("sampleClass", specimenType);
         sample.put("cmoSampleName", cmoSampleName);
-        return new CmoLabelParts(sample, requestId);
+        return new CmoLabelParts(sample, requestId, Boolean.TRUE);
     }
 
     private CmoLabelParts getSampleMetadata(String igoId, String cmoPatientId,
@@ -444,6 +444,6 @@ public class PortedLimsRestCmoLabelGenerationTest {
         Map<String, Object> cmoSampleIdFields = new HashMap<>();
         cmoSampleIdFields.put("naToExtract", naToExtract.getValue());
         sample.put("cmoSampleIdFields", cmoSampleIdFields);
-        return new CmoLabelParts(sample, requestId);
+        return new CmoLabelParts(sample, requestId, Boolean.TRUE);
     }
 }

@@ -32,6 +32,7 @@ public class CmoLabelParts implements Serializable, Cloneable {
     private String origSampleJsonStr;
     private String cmoSampleName; // igo/smile => cmoSampleName
     private String tumorOrNormal; // igo/smile => tumorOrNormal
+    private Object isCmoSample; // igo => request:isCmoRequest, smile => additionalProperties:isCmoSample
 
     public CmoLabelParts() {}
 
@@ -39,9 +40,11 @@ public class CmoLabelParts implements Serializable, Cloneable {
      * Constructor for CmoLabelParts.
      * @param sampleMap
      * @param requestId
+     * @param isCmoSample
      * @throws JsonProcessingException
      */
-    public CmoLabelParts(Map<String, Object> sampleMap, String requestId) throws JsonProcessingException {
+    public CmoLabelParts(Map<String, Object> sampleMap, String requestId, Object isCmoSample)
+            throws JsonProcessingException {
         this.origSampleJsonStr = mapper.writeValueAsString(sampleMap);
 
         // fields common to both smile and igo sample data
@@ -74,6 +77,11 @@ public class CmoLabelParts implements Serializable, Cloneable {
                 getString(additionalProperties, "requestId"));
         this.altId = sampleMap.containsKey("altid")
                 ? getString(sampleMap, "altid") : getString(additionalProperties, "altId");
+        if (isCmoSample != null) {
+            this.isCmoSample = isCmoSample;
+        } else if (additionalProperties != null) {
+            this.isCmoSample = additionalProperties.get("isCmoSample");
+        }
     }
 
     /**
@@ -298,6 +306,20 @@ public class CmoLabelParts implements Serializable, Cloneable {
      */
     public void setTumorOrNormal(String tumorOrNormal) {
         this.tumorOrNormal = tumorOrNormal;
+    }
+
+    /**
+     * @return the isCmoSample
+     */
+    public Object getIsCmoSample() {
+        return isCmoSample;
+    }
+
+    /**
+     * @param isCmoSample the isCmoSample to set
+     */
+    public void setIsCmoSample(Object isCmoSample) {
+        this.isCmoSample = isCmoSample;
     }
 
     private String getString(Map<String, Object> map, String key) {

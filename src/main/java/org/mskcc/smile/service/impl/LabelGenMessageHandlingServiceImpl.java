@@ -201,15 +201,17 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         String requestId = getRequestIdFromRequestJson(requestJson);
                         LOG.info("Extracting samples from request received: " + requestId);
                         List<Map<String, Object>> samples = getSamplesFromRequestJson(requestJson);
+                        // get is cmo request for label generator
+                        Object isCmoRequest = getIsCmoRequestFromRequestJson(requestJson);
 
-                        // get existing samples for all patients in the request
+                        // get existing samples for all patients and alt ids in the request
                         Map<String, List<CmoLabelParts>> patientSamplesMap = getPatientSamplesMap(samples);
                         Map<String, List<CmoLabelParts>> altIdSamplesMap = getAltIdSamplesMap(samples);
 
                         // udpated samples list will store samples which had a label generated successfully
                         for (int i = 0; i < samples.size(); i++) {
                             Map<String, Object> sampleMap = samples.get(i);
-                            CmoLabelParts labelParts = new CmoLabelParts(sampleMap, requestId);
+                            CmoLabelParts labelParts = new CmoLabelParts(sampleMap, requestId, isCmoRequest);
 
                             Map<String, Object> statusMap = mapper.convertValue(
                                     sampleMap.get("status"), Map.class);
@@ -351,7 +353,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                         Map<String, String> origSampleJsonMap = new HashMap<>();
                         for (int i = 0; i < samples.size(); i++) {
                             Map<String, Object> sampleMap = samples.get(i);
-                            CmoLabelParts labelParts = new CmoLabelParts(sampleMap, null);
+                            CmoLabelParts labelParts = new CmoLabelParts(sampleMap, null, null);
                             origSampleJsonMap.put(labelParts.getPrimaryId(),
                                     labelParts.getOrigSampleJsonStr());
 
@@ -497,7 +499,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         Map<String, List<CmoLabelParts>> patientSamplesMap = new HashMap<>();
         for (Map<String, Object> sm : samples) {
             // get or request existing patient samples and update patient sample mapping
-            CmoLabelParts sample = new CmoLabelParts(sm, null);
+            CmoLabelParts sample = new CmoLabelParts(sm, null, null);
             if (StringUtils.isBlank(sample.getCmoPatientId())
                     || patientSamplesMap.containsKey(sample.getCmoPatientId())) {
                 continue;
@@ -518,7 +520,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         List<CmoLabelParts> samples = new ArrayList<>();
         for (Object s : sampleObjList) {
             Map<String, Object> sm = mapper.convertValue(s, Map.class);
-            samples.add(new CmoLabelParts(sm, null));
+            samples.add(new CmoLabelParts(sm, null, null));
         }
         return samples;
     }
@@ -537,7 +539,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         List<CmoLabelParts> samples = new ArrayList<>();
         for (Object s : sampleObjList) {
             Map<String, Object> sm = mapper.convertValue(s, Map.class);
-            samples.add(new CmoLabelParts(sm, null));
+            samples.add(new CmoLabelParts(sm, null, null));
         }
         return samples;
     }
@@ -547,7 +549,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         Map<String, List<CmoLabelParts>> altIdSamplesMap = new HashMap<>();
         for (Map<String, Object> sm : samples) {
             // get or request existing patient samples and update patient sample mapping
-            CmoLabelParts sample = new CmoLabelParts(sm, null);
+            CmoLabelParts sample = new CmoLabelParts(sm, null, null);
             if (StringUtils.isBlank(sample.getAltId())
                     || altIdSamplesMap.containsKey(sample.getAltId())) {
                 continue;
@@ -573,7 +575,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
         List<CmoLabelParts> samples = new ArrayList<>();
         for (Object s : sampleObjList) {
             Map<String, Object> sm = mapper.convertValue(s, Map.class);
-            samples.add(new CmoLabelParts(sm, null));
+            samples.add(new CmoLabelParts(sm, null, null));
         }
         return samples;
     }
@@ -594,6 +596,11 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
     private String getRequestIdFromRequestJson(String requestJson) throws JsonProcessingException {
         Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
         return requestJsonMap.get("requestId").toString();
+    }
+
+    private Object getIsCmoRequestFromRequestJson(String requestJson) throws JsonProcessingException {
+        Map<String, Object> requestJsonMap = mapper.readValue(requestJson, Map.class);
+        return requestJsonMap.get("isCmoRequest");
     }
 
     private List<Map<String, Object>> getSamplesFromRequestJson(String requestJson)
@@ -775,7 +782,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                     for (Object s : sampleObjList) {
                         Map<String, Object> sm = mapper.convertValue(s, Map.class);
                         if (!sm.containsKey("igoRequestId")) {
-                            CmoLabelParts labelParts = new CmoLabelParts(sm, null);
+                            CmoLabelParts labelParts = new CmoLabelParts(sm, null, null);
                             sm.put("igoRequestId", labelParts.getIgoRequestId());
                         }
                         sampleMetadataList.add(sm);
@@ -798,7 +805,7 @@ public class LabelGenMessageHandlingServiceImpl implements MessageHandlingServic
                 // in smile and is associated with a different sample
                 // if diff alt ids then increment by sample counter otherwise increment nuc acid counter
                 Map<String, Object> sm = mapper.convertValue(s, Map.class);
-                CmoLabelParts sample = new CmoLabelParts(sm, null);
+                CmoLabelParts sample = new CmoLabelParts(sm, null, null);
                 if (!sample.getPrimaryId().equals(primaryId)) {
                     String otherAltId = sample.getAltId();
                     if (!StringUtils.isBlank(altId) && !StringUtils.isBlank(otherAltId)
