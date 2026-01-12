@@ -125,8 +125,11 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         for (CmoLabelParts existingSample : existingPatientSamples) {
             if (existingSample.getPrimaryId().equals(sample.getPrimaryId())) {
                 try {
-                    return !jsonComparator.isConsistent(mapper.writeValueAsString(sample),
+                    // if there are data differences or the existing sample does not have a label then
+                    // return true to permit label generation
+                    Boolean isConsistentData = jsonComparator.isConsistent(mapper.writeValueAsString(sample),
                             mapper.writeValueAsString(existingSample));
+                    return (!isConsistentData || StringUtils.isBlank(existingSample.getCmoSampleName()));
                 } catch (JsonProcessingException ex) {
                     LOG.error("Encountered JSON processing error while comparing sample "
                             + "label parts to existing sample label parts.", ex);
