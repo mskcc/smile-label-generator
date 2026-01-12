@@ -734,11 +734,18 @@ public class CmoLabelGeneratorServiceTest {
         // labels should be ignored during comparison
         Assertions.assertTrue(
                 cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sm1Updated, Arrays.asList(sm1)));
-        // assert false if isCmoSample is also false (i.e., no change at all in label parts data)
-        CmoLabelParts sm1UpdatedFalse = initSmileSampleLabelParts("12345_C_7", "", "C-BRCD03", "ABF-89D",
+        // assert true if no change at all metadata but existing sample does not already have a label
+        CmoLabelParts sm1NoUpdatesNoLabel = initSmileSampleLabelParts("12345_C_7", "", "C-BRCD03", "ABF-89D",
                 "Normal", "cfDNA", NucleicAcid.DNA, "Plasma", "cfDNA", "12345_C", "Normal", Boolean.FALSE);
-        Assertions.assertFalse(
-                cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sm1UpdatedFalse, Arrays.asList(sm1)));
+        Assertions.assertTrue(cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sm1NoUpdatesNoLabel,
+                Arrays.asList(sm1)));
+
+        // assert false if no change at all in metadata and existing sample already has a label
+        sm1.setCmoSampleName("C-BRCD03-L001-d01");
+        CmoLabelParts sm1NoUpdatesWLabel = initSmileSampleLabelParts("12345_C_7", "", "C-BRCD03", "ABF-89D",
+                "Normal", "cfDNA", NucleicAcid.DNA, "Plasma", "cfDNA", "12345_C", "Normal", Boolean.FALSE);
+        Assertions.assertFalse(cmoLabelGeneratorService.sampleHasLabelSpecificUpdates(sm1NoUpdatesWLabel,
+                Arrays.asList(sm1)));
     }
 
     private CmoLabelParts getSampleWithPrimaryIdAndLabel(String primaryId, String cmoSampleName)
