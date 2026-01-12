@@ -32,7 +32,7 @@
     <smile_messaging_java.version>2.1.2.RELEASE</smile_messaging_java.version>
     <!-- smile commons centralized config properties -->
     <smile_commons.group>com.github.mskcc</smile_commons.group>
-    <smile_commons.version>2.1.4.RELEASE</smile_commons.version>
+    <smile_commons.version>2.1.5.RELEASE</smile_commons.version>
   </properties>
 
   <dependencies>
