@@ -121,15 +121,20 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
         if (existingPatientSamples.isEmpty()) {
             return Boolean.TRUE;
         }
+
         // find matching sample in set of existing patient samples
-        for (CmoLabelParts existingSample : existingPatientSamples) {
-            if (existingSample.getPrimaryId().equals(sample.getPrimaryId())) {
+        CmoLabelParts matchingSample = null;
+        Boolean hasUpdates = Boolean.FALSE;
+        for (CmoLabelParts ptSample : existingPatientSamples) {
+            if (ptSample.getPrimaryId().equals(sample.getPrimaryId())) {
+                matchingSample = ptSample;
                 try {
                     // if there are data differences or the existing sample does not have a label then
                     // return true to permit label generation
                     Boolean isConsistentData = jsonComparator.isConsistent(mapper.writeValueAsString(sample),
-                            mapper.writeValueAsString(existingSample));
-                    return (!isConsistentData || StringUtils.isBlank(existingSample.getCmoSampleName()));
+                            mapper.writeValueAsString(ptSample));
+                    hasUpdates = (!isConsistentData || StringUtils.isBlank(ptSample.getCmoSampleName()));
+                    break;
                 } catch (JsonProcessingException ex) {
                     LOG.error("Encountered JSON processing error while comparing sample "
                             + "label parts to existing sample label parts.", ex);
@@ -138,7 +143,25 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
                 }
             }
         }
-        return Boolean.TRUE;
+        if (matchingSample == null || hasUpdates) {
+            return Boolean.TRUE;
+        }
+
+        // if no label specific updates then check if existing sample label is in use by another sample
+        if (!StringUtils.isBlank(matchingSample.getCmoSampleName())) {
+            for (CmoLabelParts otherSample : existingPatientSamples) {
+                if (otherSample.getPrimaryId().equals(sample.getPrimaryId())) {
+                    continue;
+                }
+                if (StringUtils.isBlank(otherSample.getCmoSampleName())) {
+                    continue;
+                }
+                if (otherSample.getCmoSampleName().equals(matchingSample.getCmoSampleName())) {
+                    return Boolean.TRUE;
+                }
+            }
+        }
+        return Boolean.FALSE;
     }
 
     /**
