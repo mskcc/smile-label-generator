@@ -63,20 +63,20 @@ public class CmoLabelParts implements Serializable, Cloneable {
         this.recipe = getString(cmoSampleIdFields, "recipe"); // same value as smile => genePanel
 
         // resolve fields based on the map keys present
-        this.primaryId = sampleMap.containsKey("igoId")
-                ? getString(sampleMap, "igoId") : getString(sampleMap, "primaryId");
-        this.sampleClass = sampleMap.containsKey("specimenType")
-                ? getString(sampleMap, "specimenType") : getString(sampleMap, "sampleClass");
-        this.sampleType = sampleMap.containsKey("cmoSampleClass")
-                ? getString(sampleMap, "cmoSampleClass") : getString(sampleMap, "sampleType");
+        this.primaryId = ObjectUtils.firstNonNull(getString(sampleMap, "igoId"),
+                getString(sampleMap, "primaryId"));
+        this.sampleClass = ObjectUtils.firstNonNull(getString(sampleMap, "specimenType"),
+                getString(sampleMap, "sampleClass"));
+        this.sampleType = ObjectUtils.firstNonNull(getString(sampleMap, "cmoSampleClass"),
+                getString(sampleMap, "sampleType"));
 
         Map<String, Object> additionalProperties
                 = mapper.convertValue(sampleMap.get("additionalProperties"), Map.class);
         this.igoRequestId = requestId != null ? requestId : ObjectUtils.firstNonNull(
                 getString(additionalProperties, "igoRequestId"),
                 getString(additionalProperties, "requestId"));
-        this.altId = sampleMap.containsKey("altid")
-                ? getString(sampleMap, "altid") : getString(additionalProperties, "altId");
+        this.altId = ObjectUtils.firstNonNull(getString(sampleMap, "altid"),
+                getString(sampleMap, "altId"), getString(additionalProperties, "altId"));
         if (isCmoSample != null) {
             this.isCmoSample = isCmoSample;
         } else if (additionalProperties != null) {
