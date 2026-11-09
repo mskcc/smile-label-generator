@@ -122,6 +122,10 @@ public class CmoLabelGeneratorServiceImpl implements CmoLabelGeneratorService {
             return Boolean.TRUE;
         }
 
+        if (sample.getForceCmoLabel() != null && sample.getForceCmoLabel()) {
+            return Boolean.TRUE;
+        }
+
         // find matching sample in set of existing patient samples
         CmoLabelParts matchingSample = null;
         Boolean hasUpdates = Boolean.FALSE;

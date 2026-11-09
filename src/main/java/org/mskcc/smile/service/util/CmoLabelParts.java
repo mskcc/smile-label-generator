@@ -33,6 +33,7 @@ public class CmoLabelParts implements Serializable, Cloneable {
     private String cmoSampleName; // igo/smile => cmoSampleName
     private String tumorOrNormal; // igo/smile => tumorOrNormal
     private Object isCmoSample; // igo => request:isCmoRequest, smile => additionalProperties:isCmoSample
+    private Boolean forceCmoLabel; // smile => additionalProperties:forceCmoLabel
 
     public CmoLabelParts() {}
 
@@ -81,6 +82,11 @@ public class CmoLabelParts implements Serializable, Cloneable {
             this.isCmoSample = isCmoSample;
         } else if (additionalProperties != null) {
             this.isCmoSample = additionalProperties.get("isCmoSample");
+        }
+        // check if force cmo label
+        if (additionalProperties != null) {
+            String fclStr = getString(additionalProperties, "forceCmoLabel");
+            this.forceCmoLabel = fclStr != null ? Boolean.getBoolean(fclStr) : null;
         }
     }
 
@@ -320,6 +326,20 @@ public class CmoLabelParts implements Serializable, Cloneable {
      */
     public void setIsCmoSample(Object isCmoSample) {
         this.isCmoSample = isCmoSample;
+    }
+
+    /**
+     * @return the forceCmoLabel
+     */
+    public Boolean getForceCmoLabel() {
+        return forceCmoLabel;
+    }
+
+    /**
+     * @param forceCmoLabel the forceCmoLabel to set
+     */
+    public void setForceCmoLabel(Boolean forceCmoLabel) {
+        this.forceCmoLabel = forceCmoLabel;
     }
 
     private String getString(Map<String, Object> map, String key) {
